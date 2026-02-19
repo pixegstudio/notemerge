@@ -622,14 +622,14 @@ export const PremiumScreen = ({ navigation }: any) => {
             <View style={styles.plansContainer}>
               <PlanCard
                 type="yearly"
-                price={products.find(p => p.type === 'yearly')?.localizedPrice || '₺199'}
+                price={products.find(p => p.type === 'yearly')?.localizedPrice || '₺349'}
                 period="yıl"
                 savings="40% İNDİRİM"
                 isSelected={selectedPlan === 'yearly'}
               />
               <PlanCard
                 type="monthly"
-                price={products.find(p => p.type === 'monthly')?.localizedPrice || '₺29'}
+                price={products.find(p => p.type === 'monthly')?.localizedPrice || '₺49'}
                 period="ay"
                 isSelected={selectedPlan === 'monthly'}
               />
@@ -655,8 +655,8 @@ export const PremiumScreen = ({ navigation }: any) => {
               <GradientButton
                 title={isPurchasing ? 'İşleniyor...' : (
                   selectedPlan === 'yearly' 
-                    ? (products.find(p => p.type === 'yearly')?.localizedPrice || '₺199') + '/Yıl ile Başla'
-                    : (products.find(p => p.type === 'monthly')?.localizedPrice || '₺29') + '/Ay ile Başla'
+                    ? (products.find(p => p.type === 'yearly')?.localizedPrice || '₺349') + '/Yıl ile Başla'
+                    : (products.find(p => p.type === 'monthly')?.localizedPrice || '₺49') + '/Ay ile Başla'
                 )}
                 onPress={handlePurchase}
                 disabled={isPurchasing}
