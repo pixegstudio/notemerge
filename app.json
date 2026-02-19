@@ -4,6 +4,7 @@
     "slug": "notemerge",
     "version": "1.0.0",
     "orientation": "portrait",
+    "owner": "pixegstudio",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
