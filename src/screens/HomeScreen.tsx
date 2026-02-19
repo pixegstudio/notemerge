@@ -127,24 +127,25 @@ const createStyles = (theme: any) => StyleSheet.create({
     elevation: 3,
   },
   statGradient: {
-    padding: Spacing.sm,
+    padding: Spacing.xs,
+    paddingVertical: Spacing.sm,
     alignItems: 'center',
-    gap: 4,
-    minHeight: 85,
+    gap: 2,
+    minHeight: 75,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
     marginTop: 2,
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: Typography.caption.fontFamily,
     fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.9)',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     textAlign: 'center',
   },
   mostActiveCard: {
@@ -806,7 +807,7 @@ export const HomeScreen = ({ navigation }: any) => {
             />
           </View>
 
-          {/* Statistics Cards - 2x2 Grid */}
+          {/* Statistics Cards - 1x4 Grid */}
         {courses.length > 0 && (
           <View style={styles.statsContainer}>
             <View style={styles.statsRow}>
@@ -818,7 +819,7 @@ export const HomeScreen = ({ navigation }: any) => {
                   end={{ x: 1, y: 1 }}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="folder" size={20} color="#FFF" />
+                  <Ionicons name="folder" size={18} color="#FFF" />
                   <Text style={styles.statValue}>{courses.length}</Text>
                   <Text style={styles.statLabel}>Ders</Text>
                 </LinearGradient>
@@ -832,16 +833,14 @@ export const HomeScreen = ({ navigation }: any) => {
                   end={{ x: 1, y: 1 }}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="document-text" size={20} color="#FFF" />
+                  <Ionicons name="document-text" size={18} color="#FFF" />
                   <Text style={styles.statValue}>
                     {courses.reduce((sum, course) => sum + course.notes.length, 0)}
                   </Text>
                   <Text style={styles.statLabel}>Not</Text>
                 </LinearGradient>
               </View>
-            </View>
 
-            <View style={styles.statsRow}>
               {/* Total Pages */}
               <View style={styles.statCard}>
                 <LinearGradient
@@ -850,7 +849,7 @@ export const HomeScreen = ({ navigation }: any) => {
                   end={{ x: 1, y: 1 }}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="albums" size={20} color="#FFF" />
+                  <Ionicons name="albums" size={18} color="#FFF" />
                   <Text style={styles.statValue}>
                     {courses.reduce((sum, course) => 
                       sum + course.notes.reduce((noteSum, note) => 
@@ -870,7 +869,7 @@ export const HomeScreen = ({ navigation }: any) => {
                   end={{ x: 1, y: 1 }}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="calendar" size={20} color="#FFF" />
+                  <Ionicons name="calendar" size={18} color="#FFF" />
                   <Text style={styles.statValue}>
                     {(() => {
                       const now = new Date();
@@ -934,36 +933,6 @@ export const HomeScreen = ({ navigation }: any) => {
               return null;
             })()}
 
-            {/* This Week's Activity */}
-            {(() => {
-              const oneWeekAgo = new Date();
-              oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-              
-              const recentNotes = courses.reduce((count, course) => {
-                return count + course.notes.filter(note => {
-                  const noteDate = typeof note.createdAt === 'string' 
-                    ? new Date(note.createdAt) 
-                    : note.createdAt;
-                  return noteDate >= oneWeekAgo;
-                }).length;
-              }, 0);
-
-              if (recentNotes > 0) {
-                return (
-                  <View style={styles.activityCard}>
-                    <View style={styles.activityHeader}>
-                      <Ionicons name="calendar" size={18} color={theme.colors.accentGradient[0]} />
-                      <Text style={styles.activityTitle}>Bu Hafta</Text>
-                    </View>
-                    <View style={styles.activityContent}>
-                      <Text style={styles.activityValue}>{recentNotes}</Text>
-                      <Text style={styles.activityLabel}>yeni not eklendi</Text>
-                    </View>
-                  </View>
-                );
-              }
-              return null;
-            })()}
           </View>
           )}
 
