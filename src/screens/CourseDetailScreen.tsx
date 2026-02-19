@@ -409,7 +409,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   actionSheetTitle: {
     fontSize: Typography.headline.fontSize,
     fontWeight: Typography.headline.fontWeight,
-    color: theme.colors.text.inverse,
+    color: theme.colors.text.primary,
     marginBottom: Spacing.xl,
     textAlign: 'center',
   },
@@ -433,7 +433,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   actionTitle: {
     fontSize: Typography.body.fontSize,
     fontWeight: '600',
-    color: theme.colors.text.inverse,
+    color: theme.colors.text.primary,
     marginBottom: 2,
   },
   actionSubtitle: {

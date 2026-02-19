@@ -38,6 +38,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   gradient: {
     flex: 1,
+    paddingTop: 0,
   },
   stickyHeader: {
     backgroundColor: theme.colors.background,
@@ -55,10 +56,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.base,
-    marginTop: '10%',
-    paddingTop: Spacing.base,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.md,
-    zIndex: 1,
   },
   headerActions: {
     flexDirection: 'row',
