@@ -272,11 +272,12 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: Spacing.base,
     gap: Spacing.sm,
+    flexWrap: 'nowrap',
   },
   tagFilterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
     borderWidth: 1.5,
@@ -284,7 +285,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.card.background,
     gap: Spacing.xs,
     flexShrink: 0,
-    minWidth: 60,
   },
   tagFilterChipActive: {
     backgroundColor: theme.colors.accentGradient[0],
@@ -296,6 +296,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text.secondary,
     flexShrink: 0,
+    flexWrap: 'nowrap',
   },
   tagFilterTextActive: {
     color: theme.colors.text.inverse,
