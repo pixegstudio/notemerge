@@ -33,7 +33,13 @@ const StatusBarManager = () => {
     StatusBar.setBarStyle(theme.id === 'light' ? 'dark-content' : 'light-content', true);
   }, [theme.id]);
 
-  return null;
+  return (
+    <StatusBar 
+      barStyle={theme.id === 'light' ? 'dark-content' : 'light-content'}
+      backgroundColor="transparent"
+      translucent={true}
+    />
+  );
 };
 
 export default function App() {
