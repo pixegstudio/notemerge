@@ -881,9 +881,12 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
-      const updatedTags = selectedNote.tags.includes(tagId)
-        ? selectedNote.tags.filter(t => t !== tagId)
-        : [...selectedNote.tags, tagId];
+      // Initialize tags array if it doesn't exist
+      const currentTags = selectedNote.tags || [];
+      
+      const updatedTags = currentTags.includes(tagId)
+        ? currentTags.filter(t => t !== tagId)
+        : [...currentTags, tagId];
 
       await StorageService.updateNote(selectedNote.id, { tags: updatedTags });
       setShowTagModal(false);
@@ -1560,7 +1563,7 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
             
             <ScrollView style={{ maxHeight: 400 }}>
               {PredefinedTags.map((tag) => {
-                const isSelected = selectedNote?.tags.includes(tag.id);
+                const isSelected = selectedNote?.tags?.includes(tag.id) || false;
                 return (
                   <TouchableOpacity
                     key={tag.id}
