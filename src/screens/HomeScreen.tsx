@@ -276,7 +276,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   tagFilterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.base,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
     borderWidth: 1.5,
@@ -284,6 +284,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.card.background,
     gap: Spacing.xs,
     flexShrink: 0,
+    minWidth: 60,
   },
   tagFilterChipActive: {
     backgroundColor: theme.colors.accentGradient[0],
@@ -294,6 +295,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontFamily: Typography.footnote.fontFamily,
     fontWeight: '600',
     color: theme.colors.text.secondary,
+    flexShrink: 0,
   },
   tagFilterTextActive: {
     color: theme.colors.text.inverse,
