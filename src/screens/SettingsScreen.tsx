@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -122,9 +124,12 @@ export const SettingsScreen = ({ navigation }: any) => {
   const { theme, themeMode, toggleTheme } = useTheme();
   const styles = createStyles(theme);
   const [isPremium, setIsPremium] = useState(false);
+  const [cacheSize, setCacheSize] = useState('0 MB');
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     loadPremiumStatus();
+    loadCacheSize();
   }, []);
 
   const loadPremiumStatus = async () => {
@@ -132,9 +137,69 @@ export const SettingsScreen = ({ navigation }: any) => {
     setIsPremium(status);
   };
 
+  const loadCacheSize = async () => {
+    const size = await StorageService.getCacheSize();
+    setCacheSize(size);
+  };
+
   const handleThemeToggle = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     toggleTheme();
+  };
+
+  const handleClearCache = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    Alert.alert(
+      '⚠️ Önbelleği Temizle',
+      'Önbellek temizlenecek. Bu işlem:\n\n• Geçici dosyaları silecek\n• Bildirim ayarlarını sıfırlayacak\n• Yedekleme ayarlarını sıfırlayacak\n\n⚠️ Not: Dersleriniz ve notlarınız silinmeyecek.\n\n💡 Devam etmeden önce yedek almanızı öneririz.',
+      [
+        {
+          text: 'İptal',
+          style: 'cancel',
+        },
+        {
+          text: 'Yedek Al',
+          onPress: () => navigation.navigate('Backup'),
+        },
+        {
+          text: 'Temizle',
+          style: 'destructive',
+          onPress: performClearCache,
+        },
+      ]
+    );
+  };
+
+  const performClearCache = async () => {
+    setIsClearing(true);
+    
+    try {
+      const result = await StorageService.clearCache();
+      
+      if (result.success) {
+        await loadCacheSize();
+        Alert.alert(
+          '✅ Başarılı',
+          result.message,
+          [{ text: 'Tamam', style: 'default' }]
+        );
+      } else {
+        Alert.alert(
+          '❌ Hata',
+          result.message,
+          [{ text: 'Tamam', style: 'default' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        '❌ Hata',
+        'Önbellek temizlenirken bir hata oluştu.',
+        [{ text: 'Tamam', style: 'default' }]
+      );
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   const SettingItem = ({
@@ -278,6 +343,18 @@ export const SettingsScreen = ({ navigation }: any) => {
               title="Yedekleme"
               subtitle="iCloud senkronizasyonu"
               onPress={() => navigation.navigate('Backup')}
+            />
+
+            <SettingItem
+              icon="trash-outline"
+              title="Önbelleği Temizle"
+              subtitle={isClearing ? 'Temizleniyor...' : `${cacheSize} önbellek`}
+              onPress={handleClearCache}
+              rightElement={
+                isClearing ? (
+                  <ActivityIndicator size="small" color={theme.colors.accentGradient[0]} />
+                ) : undefined
+              }
             />
 
             <SettingItem

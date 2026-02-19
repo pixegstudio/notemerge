@@ -315,7 +315,8 @@ export class StorageService {
       const cacheKeys = keys.filter(key => 
         key.includes('cache') || 
         key.includes('temp') ||
-        key.includes('@notification_settings')
+        key.includes('@notification_settings') ||
+        key.includes('@backup_settings')
       );
       
       if (cacheKeys.length > 0) {
@@ -331,6 +332,24 @@ export class StorageService {
       return {
         success: false,
         message: 'Önbellek temizlenirken hata oluştu',
+      };
+    }
+  }
+
+  static async clearAllData(): Promise<{ success: boolean; message: string }> {
+    try {
+      // Clear ALL data including courses, notes, etc.
+      await AsyncStorage.clear();
+      
+      return {
+        success: true,
+        message: 'Tüm veriler başarıyla silindi',
+      };
+    } catch (error) {
+      console.error('Error clearing all data:', error);
+      return {
+        success: false,
+        message: 'Veriler silinirken hata oluştu',
       };
     }
   }
