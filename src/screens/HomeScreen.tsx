@@ -291,12 +291,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderColor: theme.colors.accentGradient[0],
   },
   tagFilterText: {
-    fontSize: Typography.footnote.fontSize,
+    fontSize: 11,
     fontFamily: Typography.footnote.fontFamily,
     fontWeight: '600',
     color: theme.colors.text.secondary,
-    flexShrink: 0,
-    flexWrap: 'nowrap',
   },
   tagFilterTextActive: {
     color: theme.colors.text.inverse,
@@ -991,11 +989,13 @@ export const HomeScreen = ({ navigation }: any) => {
                       size={16} 
                       color={selectedTagFilter === tag.id ? '#FFF' : tag.color} 
                     />
-                    <Text style={[
-                      styles.tagFilterText,
-                      selectedTagFilter === tag.id && styles.tagFilterTextActive,
-                      { color: selectedTagFilter === tag.id ? '#FFF' : tag.color },
-                    ]}>
+                    <Text 
+                      style={[
+                        styles.tagFilterText,
+                        selectedTagFilter === tag.id && styles.tagFilterTextActive,
+                        { color: selectedTagFilter === tag.id ? '#FFF' : tag.color },
+                      ]}
+                    >
                       {tag.name}
                     </Text>
                   </TouchableOpacity>
