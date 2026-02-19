@@ -65,13 +65,20 @@ export const TagStatsScreen = ({ navigation }: any) => {
 
   const loadStats = async () => {
     try {
-      const [courses, customTagsData] = await Promise.all([
+      const [courses, customTagsData, allNotes] = await Promise.all([
         StorageService.getCourses(),
         StorageService.getCustomTags(),
+        StorageService.getNotes(),
       ]);
 
       console.log('📊 Loading Tag Stats...');
       console.log('   Total courses:', courses.length);
+      console.log('   Total notes:', allNotes.length);
+
+      // Populate courses with their notes
+      courses.forEach(course => {
+        course.notes = allNotes.filter(note => note.courseId === course.id);
+      });
 
       setCustomTags(customTagsData);
 
