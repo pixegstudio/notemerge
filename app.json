@@ -34,11 +34,7 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
-      ],
-      "statusBar": {
-        "barStyle": "dark-content",
-        "backgroundColor": "#FFFFFF"
-      }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

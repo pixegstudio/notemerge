@@ -8,10 +8,8 @@ import {
   Dimensions,
   Share,
   Alert,
-  StatusBar as RNStatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -415,11 +413,6 @@ export const HomeScreen = ({ navigation }: any) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
 
-  // Set status bar style based on theme
-  useEffect(() => {
-    RNStatusBar.setBarStyle(theme.id === 'light' ? 'dark-content' : 'light-content', true);
-  }, [theme.id]);
-
   // Load courses from storage
   useEffect(() => {
     loadData();
@@ -728,7 +721,6 @@ export const HomeScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar style={theme.id === 'light' ? 'dark' : 'light'} backgroundColor="transparent" translucent={false} />
       <LinearGradient
         colors={[Colors.background, Colors.backgroundSecondary]}
         style={styles.gradient}
