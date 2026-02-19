@@ -374,4 +374,77 @@ export class StorageService {
       return '0 MB';
     }
   }
+
+  // ============================================================
+  // BACKUP & RESTORE (Manual JSON)
+  // ============================================================
+
+  static async exportBackup(): Promise<{ success: boolean; data?: string; error?: string }> {
+    try {
+      const [courses, notes, customTags, premiumStatus, theme] = await Promise.all([
+        this.getCourses(),
+        this.getNotes(),
+        this.getCustomTags(),
+        this.getPremiumStatus(),
+        AsyncStorage.getItem('@notemerge_theme'),
+      ]);
+
+      const backupData = {
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        data: {
+          courses,
+          notes,
+          customTags,
+          premiumStatus,
+          theme,
+        },
+      };
+
+      return {
+        success: true,
+        data: JSON.stringify(backupData, null, 2),
+      };
+    } catch (error) {
+      console.error('Error exporting backup:', error);
+      return {
+        success: false,
+        error: 'Yedekleme oluşturulurken hata oluştu',
+      };
+    }
+  }
+
+  static async importBackup(jsonData: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const backupData = JSON.parse(jsonData);
+
+      // Validate backup structure
+      if (!backupData.version || !backupData.data) {
+        return {
+          success: false,
+          message: 'Geçersiz yedekleme dosyası',
+        };
+      }
+
+      const { courses, notes, customTags, premiumStatus, theme } = backupData.data;
+
+      // Restore data
+      if (courses) await this.saveCourses(courses);
+      if (notes) await this.saveNotes(notes);
+      if (customTags) await this.saveCustomTags(customTags);
+      if (premiumStatus !== undefined) await this.setPremiumStatus(premiumStatus);
+      if (theme) await AsyncStorage.setItem('@notemerge_theme', theme);
+
+      return {
+        success: true,
+        message: `${courses?.length || 0} ders ve ${notes?.length || 0} not geri yüklendi`,
+      };
+    } catch (error) {
+      console.error('Error importing backup:', error);
+      return {
+        success: false,
+        message: 'Yedekleme geri yüklenirken hata oluştu',
+      };
+    }
+  }
 }

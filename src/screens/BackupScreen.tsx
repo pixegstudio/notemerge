@@ -14,6 +14,9 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 import { useTheme } from '../context/ThemeContext';
 import { IconButton } from '../components';
 import { Spacing, BorderRadius } from '../constants/spacing';
@@ -154,6 +157,16 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: Typography.body.fontSize,
     fontWeight: '600',
   },
+  comingSoonBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.sm,
+  },
+  comingSoonText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
 });
 
 export const BackupScreen = ({ navigation }: any) => {
@@ -170,11 +183,18 @@ export const BackupScreen = ({ navigation }: any) => {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [cacheSize, setCacheSize] = useState('0 MB');
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     loadSettings();
     loadCacheSize();
+    loadPremiumStatus();
   }, []);
+
+  const loadPremiumStatus = async () => {
+    const status = await StorageService.getPremiumStatus();
+    setIsPremium(status);
+  };
 
   const loadSettings = async () => {
     try {
@@ -240,40 +260,94 @@ export const BackupScreen = ({ navigation }: any) => {
     }
   };
 
+  // Manuel Export (Freemium)
+  const handleExportBackup = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsBackingUp(true);
+
+    try {
+      const result = await StorageService.exportBackup();
+
+      if (!result.success || !result.data) {
+        Alert.alert('Hata', result.error || 'Yedekleme oluşturulamadı');
+        return;
+      }
+
+      // Save to file
+      const fileName = `notemerge_backup_${new Date().toISOString().split('T')[0]}.json`;
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+      
+      await FileSystem.writeAsStringAsync(fileUri, result.data);
+
+      // Share file
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'application/json',
+          dialogTitle: 'Yedekleme Dosyasını Kaydet',
+        });
+
+        Alert.alert(
+          '✅ Yedekleme Tamamlandı',
+          'Yedekleme dosyası oluşturuldu. Dosyayı güvenli bir yere kaydedin.',
+          [{ text: 'Tamam', style: 'default' }]
+        );
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert('Hata', 'Yedekleme oluşturulurken hata oluştu');
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  // Manuel Import (Freemium)
+  const handleImportBackup = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+
+      setIsRestoring(true);
+
+      const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      const importResult = await StorageService.importBackup(fileContent);
+
+      if (importResult.success) {
+        Alert.alert(
+          '✅ Geri Yükleme Tamamlandı',
+          importResult.message,
+          [
+            {
+              text: 'Tamam',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Hata', importResult.message);
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      Alert.alert('Hata', 'Yedekleme geri yüklenirken hata oluştu');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  // Auto Backup (Premium - Coming Soon)
   const handleRestore = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     Alert.alert(
-      'Yedekten Geri Yükle',
-      'Son yedekleme geri yüklenecek. Mevcut veriler silinecek. Devam etmek istiyor musunuz?',
-      [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Geri Yükle',
-          style: 'destructive',
-          onPress: async () => {
-            setIsRestoring(true);
-            try {
-              // Simulate restore process
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              
-              Alert.alert(
-                'Geri Yükleme Tamamlandı',
-                'Verileriniz başarıyla geri yüklendi.',
-                [{ text: 'Tamam', style: 'default' }]
-              );
-            } catch (error) {
-              Alert.alert(
-                'Hata',
-                'Geri yükleme sırasında bir hata oluştu.',
-                [{ text: 'Tamam', style: 'default' }]
-              );
-            } finally {
-              setIsRestoring(false);
-            }
-          },
-        },
-      ]
+      'Otomatik Yedekleme',
+      'iCloud otomatik yedekleme özelliği yakında eklenecek.\n\nŞimdilik manuel yedekleme kullanabilirsiniz.',
+      [{ text: 'Tamam', style: 'default' }]
     );
   };
 
@@ -429,39 +503,45 @@ export const BackupScreen = ({ navigation }: any) => {
             </View>
           </View>
 
-          {/* Auto Backup Settings */}
+          {/* Auto Backup Settings - Premium Only */}
+          {isPremium && (
+            <View style={styles.section}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.base, marginBottom: Spacing.md }}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text.secondary, flex: 1 }]}>
+                  OTOMATİK YEDEKLEME (iCLOUD)
+                </Text>
+                <View style={[styles.comingSoonBadge, { backgroundColor: theme.colors.accentGradient[0] + '20' }]}>
+                  <Text style={[styles.comingSoonText, { color: theme.colors.accentGradient[0] }]}>
+                    YAKINDA
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={[
+                styles.infoCard,
+                { 
+                  backgroundColor: theme.colors.accentGradient[0] + '10',
+                  borderColor: theme.colors.accentGradient[0] + '30',
+                  marginHorizontal: Spacing.base,
+                }
+              ]}>
+                <Ionicons name="information-circle" size={20} color={theme.colors.accentGradient[0]} />
+                <Text style={[styles.infoText, { color: theme.colors.text.secondary }]}>
+                  iCloud otomatik yedekleme özelliği v1.1.0 güncellemesinde eklenecek. Şimdilik manuel yedekleme kullanabilirsiniz.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Manual Actions - Freemium */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text.secondary }]}>
-              OTOMATİK YEDEKLEME
-            </Text>
-            
-            <SettingItem
-              icon="sync"
-              title="Otomatik Yedekleme"
-              subtitle="Verilerinizi otomatik olarak yedekle"
-              value={settings.autoBackup}
-              onToggle={() => handleToggle('autoBackup')}
-            />
-
-            <SettingItem
-              icon="wifi"
-              title="Sadece Wi-Fi"
-              subtitle="Yedekleme için Wi-Fi kullan"
-              value={settings.wifiOnly}
-              onToggle={() => handleToggle('wifiOnly')}
-              disabled={!settings.autoBackup}
-            />
-          </View>
-
-          {/* Manual Actions */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text.secondary }]}>
-              MANUEL İŞLEMLER
+              MANUEL YEDEKLEME
             </Text>
             
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={handleBackupNow}
+              onPress={handleExportBackup}
               disabled={isBackingUp}
               style={styles.actionButton}
             >
@@ -475,9 +555,9 @@ export const BackupScreen = ({ navigation }: any) => {
                   <ActivityIndicator color={theme.colors.text.inverse} />
                 ) : (
                   <>
-                    <Ionicons name="cloud-upload" size={20} color={theme.colors.text.inverse} />
+                    <Ionicons name="download-outline" size={20} color={theme.colors.text.inverse} />
                     <Text style={[styles.actionButtonText, { color: theme.colors.text.inverse }]}>
-                      Şimdi Yedekle
+                      Yedekleme Dosyası Oluştur
                     </Text>
                   </>
                 )}
@@ -488,12 +568,9 @@ export const BackupScreen = ({ navigation }: any) => {
 
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={handleRestore}
-              disabled={isRestoring || !settings.lastBackup}
-              style={[
-                styles.actionButton,
-                { opacity: !settings.lastBackup ? 0.5 : 1 }
-              ]}
+              onPress={handleImportBackup}
+              disabled={isRestoring}
+              style={styles.actionButton}
             >
               <View style={[
                 styles.actionButtonGradient,
@@ -503,30 +580,12 @@ export const BackupScreen = ({ navigation }: any) => {
                   <ActivityIndicator color={theme.colors.accentGradient[0]} />
                 ) : (
                   <>
-                    <Ionicons name="cloud-download" size={20} color={theme.colors.accentGradient[0]} />
+                    <Ionicons name="cloud-upload-outline" size={20} color={theme.colors.accentGradient[0]} />
                     <Text style={[styles.actionButtonText, { color: theme.colors.accentGradient[0] }]}>
-                      Yedekten Geri Yükle
+                      Yedekleme Dosyasından Geri Yükle
                     </Text>
                   </>
                 )}
-              </View>
-            </TouchableOpacity>
-
-            <View style={{ height: Spacing.sm }} />
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleClearCache}
-              style={styles.actionButton}
-            >
-              <View style={[
-                styles.actionButtonGradient,
-                { backgroundColor: theme.colors.card.background, borderWidth: 1, borderColor: theme.colors.card.border }
-              ]}>
-                <Ionicons name="trash" size={20} color="#FF6B6B" />
-                <Text style={[styles.actionButtonText, { color: '#FF6B6B' }]}>
-                  Önbelleği Temizle
-                </Text>
               </View>
             </TouchableOpacity>
           </View>
