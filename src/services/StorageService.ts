@@ -111,11 +111,33 @@ export class StorageService {
   }
 
   static async updateNote(noteId: string, updates: Partial<Note>): Promise<void> {
+    // Update in standalone notes
     const notes = await this.getNotes();
     const index = notes.findIndex(n => n.id === noteId);
     if (index !== -1) {
       notes[index] = { ...notes[index], ...updates, updatedAt: new Date() };
       await this.saveNotes(notes);
+    }
+
+    // Also update in courses
+    const courses = await this.getCourses();
+    let courseUpdated = false;
+    
+    for (const course of courses) {
+      const noteIndex = course.notes.findIndex(n => n.id === noteId);
+      if (noteIndex !== -1) {
+        course.notes[noteIndex] = { 
+          ...course.notes[noteIndex], 
+          ...updates, 
+          updatedAt: new Date() 
+        };
+        courseUpdated = true;
+        break;
+      }
+    }
+
+    if (courseUpdated) {
+      await this.saveCourses(courses);
     }
   }
 

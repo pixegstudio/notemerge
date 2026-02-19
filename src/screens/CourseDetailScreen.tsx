@@ -714,7 +714,7 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         }
 
         const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ImagePicker.MediaType.Images,
           quality: 1,
           allowsEditing: false,
         });
@@ -730,7 +730,7 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ImagePicker.MediaType.Images,
           quality: 1,
           allowsMultipleSelection: true,
           selectionLimit: 10,
@@ -888,11 +888,18 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         ? currentTags.filter(t => t !== tagId)
         : [...currentTags, tagId];
 
+      console.log('🏷️ Updating tags for note:', selectedNote.name);
+      console.log('   Current tags:', currentTags);
+      console.log('   Updated tags:', updatedTags);
+
       await StorageService.updateNote(selectedNote.id, { tags: updatedTags });
+      
+      console.log('✅ Tags saved successfully');
+      
       setShowTagModal(false);
       loadCourse();
     } catch (error) {
-      console.error('Error updating tags:', error);
+      console.error('❌ Error updating tags:', error);
     }
   };
 

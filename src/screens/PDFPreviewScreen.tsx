@@ -147,7 +147,7 @@ export const PDFPreviewScreen = ({ navigation, route }: any) => {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         quality: 1,
         allowsMultipleSelection: true,
         selectionLimit: 10,
