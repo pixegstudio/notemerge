@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Text, TextInput, StatusBar, Platform } from 'react-native';
 import * as SplashScreenExpo from 'expo-splash-screen';
+import * as SystemUI from 'expo-system-ui';
 import { useFonts, Inter_300Light, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
@@ -26,11 +27,27 @@ const StatusBarManager = () => {
   const { theme } = useTheme();
   
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      StatusBar.setTranslucent(true);
-      StatusBar.setBackgroundColor('transparent');
-    }
-    StatusBar.setBarStyle(theme.id === 'light' ? 'dark-content' : 'light-content', true);
+    const updateStatusBar = async () => {
+      const barStyle = theme.id === 'light' ? 'dark-content' : 'light-content';
+      console.log('🎨 StatusBar: Setting barStyle to', barStyle, 'for theme:', theme.id);
+      
+      // Set root background color
+      if (Platform.OS === 'android') {
+        await SystemUI.setBackgroundColorAsync('transparent');
+        console.log('📱 StatusBar: Android - Set background to transparent');
+      }
+      
+      // Set status bar style
+      StatusBar.setBarStyle(barStyle, true);
+      
+      if (Platform.OS === 'android') {
+        StatusBar.setTranslucent(true);
+        StatusBar.setBackgroundColor('transparent');
+        console.log('📱 StatusBar: Android - Set translucent and transparent background');
+      }
+    };
+    
+    updateStatusBar();
   }, [theme.id]);
 
   return (
