@@ -68,6 +68,15 @@ export const TagStatsScreen = ({ navigation }: any) => {
       let totalTaggedNotes = 0;
       let totalUntaggedNotes = 0;
 
+      // Debug: Log all courses and their notes with tags
+      console.log('=== TAG STATS DEBUG ===');
+      courses.forEach((course) => {
+        console.log(`Course: ${course.name}`);
+        course.notes.forEach((note) => {
+          console.log(`  Note: ${note.name}, Tags:`, note.tags);
+        });
+      });
+
       allTags.forEach((tag) => {
         let noteCount = 0;
         let totalPages = 0;
@@ -81,6 +90,7 @@ export const TagStatsScreen = ({ navigation }: any) => {
               noteCount++;
               courseNoteCount++;
               totalPages += note.pages?.length || 0;
+              console.log(`  ✓ Tag "${tag.name}" found in note "${note.name}" (course: ${course.name})`);
             }
           });
 
