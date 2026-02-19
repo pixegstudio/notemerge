@@ -83,6 +83,9 @@ const translations = {
             monthly: {
                 title: 'Premium Aylık',
                 badge: 'Popüler',
+                currency: '₺',
+                price: '29',
+                period: '/ay',
                 features: [
                     '✓ Sınırsız Ders',
                     '✓ Sınırsız Not',
@@ -96,6 +99,9 @@ const translations = {
             yearly: {
                 title: 'Premium Yıllık',
                 badge: '%40 İndirim',
+                currency: '₺',
+                price: '199',
+                period: '/yıl',
                 note: 'Aylık ₺16.58',
                 features: [
                     '✓ Tüm Premium Özellikler',
@@ -237,6 +243,9 @@ const translations = {
             monthly: {
                 title: 'Premium Monthly',
                 badge: 'Popular',
+                currency: '$',
+                price: '4.99',
+                period: '/mo',
                 features: [
                     '✓ Unlimited Courses',
                     '✓ Unlimited Notes',
@@ -250,7 +259,10 @@ const translations = {
             yearly: {
                 title: 'Premium Yearly',
                 badge: '40% Off',
-                note: 'Monthly ₺16.58',
+                currency: '$',
+                price: '49.90',
+                period: '/yr',
+                note: 'Monthly $4.16',
                 features: [
                     '✓ All Premium Features',
                     '✓ 40% Savings',
