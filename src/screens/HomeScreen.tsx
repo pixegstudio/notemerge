@@ -8,6 +8,7 @@ import {
   Dimensions,
   Share,
   Alert,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -413,6 +414,11 @@ export const HomeScreen = ({ navigation }: any) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
+
+  // Set status bar style based on theme
+  useEffect(() => {
+    RNStatusBar.setBarStyle(theme.id === 'light' ? 'dark-content' : 'light-content', true);
+  }, [theme.id]);
 
   // Load courses from storage
   useEffect(() => {

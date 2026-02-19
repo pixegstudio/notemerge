@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -20,7 +20,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "NoteMerge needs camera access to scan your notes and documents.",
         "NSPhotoLibraryUsageDescription": "NoteMerge needs photo library access to import images.",
-        "NSPhotoLibraryAddUsageDescription": "NoteMerge needs permission to save PDFs to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "NoteMerge needs permission to save PDFs to your photo library.",
+        "UIViewControllerBasedStatusBarAppearance": true
       }
     },
     "android": {
@@ -33,7 +34,11 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "statusBar": {
+        "barStyle": "dark-content",
+        "backgroundColor": "#FFFFFF"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
