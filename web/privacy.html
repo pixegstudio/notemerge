@@ -105,6 +105,39 @@
         .back-link:hover {
             color: #C44569;
         }
+
+        .lang-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 0.5rem;
+            background: #1A1A2E;
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+
+        .lang-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            color: #8B8BA7;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn:hover {
+            color: #FFFFFF;
+        }
+
+        .lang-btn.active {
+            background: linear-gradient(135deg, #FF6B9D, #C44569);
+            color: #FFFFFF;
+        }
         
         @media (max-width: 640px) {
             h1 {
@@ -114,12 +147,22 @@
             .content {
                 padding: 1.5rem;
             }
+
+            .lang-toggle {
+                top: 1rem;
+                right: 1rem;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="tr">TR</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+
     <div class="container">
-        <a href="./index.html" class="back-link">
+        <a href="./index.html" class="back-link" data-i18n="privacyPage.backLink">
             ← Ana Sayfaya Dön
         </a>
         
@@ -128,79 +171,81 @@
                 <img src="./assets/images/logo.png" alt="NoteMerge Logo">
                 <span>NoteMerge</span>
             </div>
-            <h1>Gizlilik Politikası</h1>
-            <p class="last-updated">Son Güncelleme: 19 Şubat 2026</p>
+            <h1 data-i18n="privacyPage.title">Gizlilik Politikası</h1>
+            <p class="last-updated" data-i18n="privacyPage.lastUpdated">Son Güncelleme: 19 Şubat 2026</p>
         </div>
         
         <div class="content">
-            <p>
+            <p data-i18n="privacyPage.intro">
                 NoteMerge olarak gizliliğinize önem veriyoruz. Bu gizlilik politikası, 
                 uygulamamızı kullanırken toplanan, kullanılan ve korunan bilgiler hakkında 
                 sizi bilgilendirmek için hazırlanmıştır.
             </p>
 
-            <h2>1. Toplanan Bilgiler</h2>
-            <p>NoteMerge aşağıdaki bilgileri toplayabilir:</p>
+            <h2 data-i18n="privacyPage.section1Title">1. Toplanan Bilgiler</h2>
+            <p data-i18n="privacyPage.section1Intro">NoteMerge aşağıdaki bilgileri toplayabilir:</p>
             <ul>
-                <li>Ders ve not içerikleri (cihazınızda yerel olarak saklanır)</li>
-                <li>Uygulama kullanım istatistikleri (anonim)</li>
-                <li>Cihaz bilgileri (model, işletim sistemi versiyonu)</li>
-                <li>Satın alma bilgileri (App Store üzerinden)</li>
+                <li data-i18n="privacyPage.section1Item1">Ders ve not içerikleri (cihazınızda yerel olarak saklanır)</li>
+                <li data-i18n="privacyPage.section1Item2">Uygulama kullanım istatistikleri (anonim)</li>
+                <li data-i18n="privacyPage.section1Item3">Cihaz bilgileri (model, işletim sistemi versiyonu)</li>
+                <li data-i18n="privacyPage.section1Item4">Satın alma bilgileri (App Store üzerinden)</li>
             </ul>
 
-            <h2>2. Bilgilerin Kullanımı</h2>
-            <p>Toplanan bilgiler şu amaçlarla kullanılır:</p>
+            <h2 data-i18n="privacyPage.section2Title">2. Bilgilerin Kullanımı</h2>
+            <p data-i18n="privacyPage.section2Intro">Toplanan bilgiler şu amaçlarla kullanılır:</p>
             <ul>
-                <li>Uygulama işlevselliğini sağlamak</li>
-                <li>Kullanıcı deneyimini iyileştirmek</li>
-                <li>Teknik destek sağlamak</li>
-                <li>Premium abonelik hizmetlerini yönetmek</li>
+                <li data-i18n="privacyPage.section2Item1">Uygulama işlevselliğini sağlamak</li>
+                <li data-i18n="privacyPage.section2Item2">Kullanıcı deneyimini iyileştirmek</li>
+                <li data-i18n="privacyPage.section2Item3">Teknik destek sağlamak</li>
+                <li data-i18n="privacyPage.section2Item4">Premium abonelik hizmetlerini yönetmek</li>
             </ul>
 
-            <h2>3. Veri Güvenliği</h2>
-            <p>
+            <h2 data-i18n="privacyPage.section3Title">3. Veri Güvenliği</h2>
+            <p data-i18n="privacyPage.section3Content">
                 Verileriniz cihazınızda yerel olarak saklanır. iCloud senkronizasyonu 
                 kullanıyorsanız, verileriniz Apple'ın güvenlik standartlarına uygun olarak 
                 şifrelenir ve saklanır.
             </p>
 
-            <h2>4. Üçüncü Taraf Hizmetler</h2>
-            <p>NoteMerge aşağıdaki üçüncü taraf hizmetlerini kullanır:</p>
+            <h2 data-i18n="privacyPage.section4Title">4. Üçüncü Taraf Hizmetler</h2>
+            <p data-i18n="privacyPage.section4Intro">NoteMerge aşağıdaki üçüncü taraf hizmetlerini kullanır:</p>
             <ul>
-                <li>Apple App Store (satın alma işlemleri)</li>
-                <li>iCloud (opsiyonel yedekleme)</li>
+                <li data-i18n="privacyPage.section4Item1">Apple App Store (satın alma işlemleri)</li>
+                <li data-i18n="privacyPage.section4Item2">iCloud (opsiyonel yedekleme)</li>
             </ul>
 
-            <h2>5. Kullanıcı Hakları</h2>
-            <p>Kullanıcılar olarak aşağıdaki haklara sahipsiniz:</p>
+            <h2 data-i18n="privacyPage.section5Title">5. Kullanıcı Hakları</h2>
+            <p data-i18n="privacyPage.section5Intro">Kullanıcılar olarak aşağıdaki haklara sahipsiniz:</p>
             <ul>
-                <li>Verilerinize erişim hakkı</li>
-                <li>Verilerinizi silme hakkı</li>
-                <li>Verilerinizi dışa aktarma hakkı</li>
-                <li>Veri işlemeye itiraz etme hakkı</li>
+                <li data-i18n="privacyPage.section5Item1">Verilerinize erişim hakkı</li>
+                <li data-i18n="privacyPage.section5Item2">Verilerinizi silme hakkı</li>
+                <li data-i18n="privacyPage.section5Item3">Verilerinizi dışa aktarma hakkı</li>
+                <li data-i18n="privacyPage.section5Item4">Veri işlemeye itiraz etme hakkı</li>
             </ul>
 
-            <h2>6. Çocukların Gizliliği</h2>
-            <p>
+            <h2 data-i18n="privacyPage.section6Title">6. Çocukların Gizliliği</h2>
+            <p data-i18n="privacyPage.section6Content">
                 NoteMerge 13 yaş altı çocuklardan bilerek kişisel bilgi toplamaz. 
                 Ebeveynler, çocuklarının uygulamamızı kullanımını denetlemelidir.
             </p>
 
-            <h2>7. Politika Değişiklikleri</h2>
-            <p>
+            <h2 data-i18n="privacyPage.section7Title">7. Politika Değişiklikleri</h2>
+            <p data-i18n="privacyPage.section7Content">
                 Bu gizlilik politikası zaman zaman güncellenebilir. Önemli değişiklikler 
                 olduğunda uygulama içinde bilgilendirileceksiniz.
             </p>
 
-            <h2>8. İletişim</h2>
-            <p>
+            <h2 data-i18n="privacyPage.section8Title">8. İletişim</h2>
+            <p data-i18n="privacyPage.section8Intro">
                 Gizlilik politikamız hakkında sorularınız varsa, lütfen bizimle iletişime geçin:
             </p>
             <p>
-                <strong>E-posta:</strong> privacy@notemerge.app<br>
-                <strong>Web:</strong> notemerge.app
+                <strong data-i18n="privacyPage.emailLabel">E-posta:</strong> privacy@notemerge.app<br>
+                <strong data-i18n="privacyPage.webLabel">Web:</strong> notemerge.app
             </p>
         </div>
     </div>
+
+    <script src="./i18n.js"></script>
 </body>
 </html>
