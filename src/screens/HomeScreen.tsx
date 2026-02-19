@@ -113,11 +113,12 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    justifyContent: 'space-between',
+    gap: Spacing.xs,
   },
   statCard: {
-    flex: 1,
-    minWidth: 100,
+    width: 80,
+    height: 80,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -127,11 +128,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     elevation: 3,
   },
   statGradient: {
-    padding: Spacing.xs,
-    paddingVertical: Spacing.sm,
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 2,
-    minHeight: 75,
   },
   statValue: {
     fontSize: 20,
