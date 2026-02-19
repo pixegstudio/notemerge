@@ -58,6 +58,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginTop: '10%',
     paddingTop: Spacing.base,
     paddingBottom: Spacing.md,
+    zIndex: 1,
   },
   headerActions: {
     flexDirection: 'row',
@@ -75,7 +76,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontFamily: Typography.caption.fontFamily,
     fontWeight: '600',
     letterSpacing: 0.3,
-    color: '#C8B8A8',
+    color: theme.colors.text.primary,
     marginTop: 2,
     textAlign: 'center',
   },

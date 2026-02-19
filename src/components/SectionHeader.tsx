@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { Typography } from '../constants/typography';
+import { useTheme } from '../context/ThemeContext';
 
 interface SectionHeaderProps {
   title: string;
@@ -20,6 +20,43 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   onActionPress,
   icon,
 }) => {
+  const { theme } = useTheme();
+  
+  const styles = StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.base,
+      paddingVertical: Spacing.md,
+    },
+    leftContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    icon: {
+      marginRight: Spacing.sm,
+    },
+    title: {
+      fontSize: Typography.headline.fontSize,
+      lineHeight: Typography.headline.lineHeight,
+      fontWeight: Typography.headline.fontWeight,
+      color: theme.colors.text.primary,
+    },
+    subtitle: {
+      fontSize: Typography.footnote.fontSize,
+      lineHeight: Typography.footnote.lineHeight,
+      color: theme.colors.text.secondary,
+      marginTop: 2,
+    },
+    actionText: {
+      fontSize: Typography.callout.fontSize,
+      fontWeight: '500',
+      color: theme.colors.accentGradient[0],
+    },
+  });
+  
   return (
     <View style={styles.container}>
       <View style={styles.leftContent}>
@@ -27,7 +64,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           <Ionicons
             name={icon}
             size={20}
-            color={Colors.text.secondary}
+            color={theme.colors.text.primary}
             style={styles.icon}
           />
         )}
@@ -44,38 +81,3 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-  },
-  leftContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  icon: {
-    marginRight: Spacing.sm,
-  },
-  title: {
-    fontSize: Typography.headline.fontSize,
-    lineHeight: Typography.headline.lineHeight,
-    fontWeight: Typography.headline.fontWeight,
-    color: Colors.text.primary,
-  },
-  subtitle: {
-    fontSize: Typography.footnote.fontSize,
-    lineHeight: Typography.footnote.lineHeight,
-    color: Colors.text.secondary,
-    marginTop: 2,
-  },
-  actionText: {
-    fontSize: Typography.callout.fontSize,
-    fontWeight: '500',
-    color: Colors.primaryGradient[0],
-  },
-});
