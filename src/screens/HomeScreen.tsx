@@ -117,6 +117,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   statCard: {
     flex: 1,
+    minWidth: 100,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -129,6 +130,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     padding: Spacing.base,
     alignItems: 'center',
     gap: Spacing.xs,
+    minHeight: 100,
   },
   statValue: {
     fontSize: 28,
@@ -143,6 +145,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
   mostActiveCard: {
     backgroundColor: theme.colors.card.background,
@@ -280,6 +283,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderColor: theme.colors.card.border,
     backgroundColor: theme.colors.card.background,
     gap: Spacing.xs,
+    flexShrink: 0,
   },
   tagFilterChipActive: {
     backgroundColor: theme.colors.accentGradient[0],
