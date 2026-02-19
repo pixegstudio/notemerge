@@ -81,6 +81,29 @@ document.querySelectorAll('.feature-card, .pricing-card, .screenshot-item').forE
     observer.observe(el);
 });
 
+// Update legal links with current language
+function updateLegalLinks() {
+    const currentLang = localStorage.getItem('notemerge_lang') || 'tr';
+    
+    document.querySelectorAll('a[href="./privacy.html"], a[href="./terms.html"]').forEach(link => {
+        const url = new URL(link.href);
+        url.searchParams.set('lang', currentLang);
+        link.href = url.toString();
+    });
+}
+
+// Update links on page load and language change
+document.addEventListener('DOMContentLoaded', updateLegalLinks);
+
+// Listen for language changes
+const originalSetItem = localStorage.setItem;
+localStorage.setItem = function(key, value) {
+    originalSetItem.apply(this, arguments);
+    if (key === 'notemerge_lang') {
+        updateLegalLinks();
+    }
+};
+
 // Console easter egg
 console.log('%cNoteMerge 🎓', 'font-size: 24px; font-weight: bold; background: linear-gradient(135deg, #FF6B9D, #C44569); -webkit-background-clip: text; -webkit-text-fill-color: transparent;');
 console.log('%cMade with ❤️ by NoteMerge Team', 'font-size: 14px; color: #B8B8D1;');

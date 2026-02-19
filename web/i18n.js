@@ -494,13 +494,31 @@ const translations = {
     }
 };
 
-// Get current language from localStorage or default to Turkish
-let currentLang = localStorage.getItem('notemerge_lang') || 'tr';
+// Get language from URL query parameter, localStorage, or default to Turkish
+function getInitialLanguage() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlLang = urlParams.get('lang');
+    
+    if (urlLang && (urlLang === 'tr' || urlLang === 'en')) {
+        return urlLang;
+    }
+    
+    return localStorage.getItem('notemerge_lang') || 'tr';
+}
+
+let currentLang = getInitialLanguage();
 
 // Set language
-function setLanguage(lang) {
+function setLanguage(lang, updateUrl = false) {
     currentLang = lang;
     localStorage.setItem('notemerge_lang', lang);
+    
+    // Update URL if requested
+    if (updateUrl) {
+        const url = new URL(window.location);
+        url.searchParams.set('lang', lang);
+        window.history.replaceState({}, '', url);
+    }
     
     // Update all elements with data-i18n attribute
     document.querySelectorAll('[data-i18n]').forEach(element => {
@@ -539,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const lang = btn.getAttribute('data-lang');
-            setLanguage(lang);
+            setLanguage(lang, true); // Update URL when user clicks
         });
     });
 });

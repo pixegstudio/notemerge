@@ -162,7 +162,7 @@
     </div>
 
     <div class="container">
-        <a href="./index.html" class="back-link" data-i18n="termsPage.backLink">
+        <a href="#" id="backLink" class="back-link" data-i18n="termsPage.backLink">
             ← Ana Sayfaya Dön
         </a>
         
@@ -261,5 +261,13 @@
     </div>
 
     <script src="./i18n.js"></script>
+    <script>
+        // Update back link with current language
+        document.addEventListener('DOMContentLoaded', () => {
+            const backLink = document.getElementById('backLink');
+            const currentLang = localStorage.getItem('notemerge_lang') || 'tr';
+            backLink.href = `./index.html?lang=${currentLang}`;
+        });
+    </script>
 </body>
 </html>
