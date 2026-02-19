@@ -25,30 +25,39 @@ interface TagStats {
   courses: Array<{ id: string; name: string; noteCount: number }>;
 }
 
+interface CourseTagStats {
+  courseId: string;
+  courseName: string;
+  tags: Array<{
+    tag: TagType;
+    noteCount: number;
+    notes: Array<{ id: string; name: string }>;
+  }>;
+  totalTaggedNotes: number;
+}
+
 interface OverallStats {
   totalTags: number;
   totalCustomTags: number;
-  totalPredefinedTags: number;
+  usedTagsCount: number;
   totalTaggedNotes: number;
   totalUntaggedNotes: number;
-  mostUsedTag: TagStats | null;
 }
 
 export const TagStatsScreen = ({ navigation }: any) => {
   const { theme } = useTheme();
   const Colors = theme.colors;
   
-  const [tagStats, setTagStats] = useState<TagStats[]>([]);
+  const [courseTagStats, setCourseTagStats] = useState<CourseTagStats[]>([]);
   const [customTags, setCustomTags] = useState<TagType[]>([]);
   const [overallStats, setOverallStats] = useState<OverallStats>({
     totalTags: 0,
     totalCustomTags: 0,
-    totalPredefinedTags: 0,
+    usedTagsCount: 0,
     totalTaggedNotes: 0,
     totalUntaggedNotes: 0,
-    mostUsedTag: null,
   });
-  const [expandedTagId, setExpandedTagId] = useState<string | null>(null);
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 
   useEffect(() => {
     loadStats();
@@ -64,152 +73,130 @@ export const TagStatsScreen = ({ navigation }: any) => {
       setCustomTags(customTagsData);
 
       const allTags = [...PredefinedTags, ...customTagsData];
-      const stats: TagStats[] = [];
+      const courseStats: CourseTagStats[] = [];
       let totalTaggedNotes = 0;
       let totalUntaggedNotes = 0;
+      const usedTagIds = new Set<string>();
 
-      // Debug: Log all courses and their notes with tags
-      console.log('=== TAG STATS DEBUG ===');
+      // Process each course
       courses.forEach((course) => {
-        console.log(`Course: ${course.name}`);
-        course.notes.forEach((note) => {
-          console.log(`  Note: ${note.name}, Tags:`, note.tags);
-        });
-      });
+        const courseTags: CourseTagStats['tags'] = [];
+        let courseTaggedNotes = 0;
 
-      allTags.forEach((tag) => {
-        let noteCount = 0;
-        let totalPages = 0;
-        const coursesWithTag = new Map<string, { name: string; noteCount: number }>();
+        // For each tag, check which notes in this course use it
+        allTags.forEach((tag) => {
+          const notesWithTag: Array<{ id: string; name: string }> = [];
 
-        courses.forEach((course) => {
-          let courseNoteCount = 0;
-          
           course.notes.forEach((note) => {
             if (note.tags?.includes(tag.id)) {
-              noteCount++;
-              courseNoteCount++;
-              totalPages += note.pages?.length || 0;
-              console.log(`  ✓ Tag "${tag.name}" found in note "${note.name}" (course: ${course.name})`);
+              notesWithTag.push({
+                id: note.id,
+                name: note.name,
+              });
+              usedTagIds.add(tag.id);
             }
           });
 
-          if (courseNoteCount > 0) {
-            coursesWithTag.set(course.id, {
-              name: course.name,
-              noteCount: courseNoteCount,
+          if (notesWithTag.length > 0) {
+            courseTags.push({
+              tag,
+              noteCount: notesWithTag.length,
+              notes: notesWithTag,
             });
           }
         });
 
-        if (noteCount > 0) {
-          stats.push({
-            tag,
-            noteCount,
-            courseCount: coursesWithTag.size,
-            totalPages,
-            courses: Array.from(coursesWithTag.entries()).map(([id, data]) => ({
-              id,
-              name: data.name,
-              noteCount: data.noteCount,
-            })),
-          });
-        }
-      });
-
-      // Count tagged and untagged notes
-      courses.forEach((course) => {
+        // Count tagged notes in this course
         course.notes.forEach((note) => {
           if (note.tags && note.tags.length > 0) {
+            courseTaggedNotes++;
             totalTaggedNotes++;
           } else {
             totalUntaggedNotes++;
           }
         });
+
+        // Only add course if it has tagged notes
+        if (courseTags.length > 0) {
+          courseStats.push({
+            courseId: course.id,
+            courseName: course.name,
+            tags: courseTags.sort((a, b) => b.noteCount - a.noteCount), // Sort tags by usage
+            totalTaggedNotes: courseTaggedNotes,
+          });
+        }
       });
 
-      // Sort by note count (descending)
-      stats.sort((a, b) => b.noteCount - a.noteCount);
+      // Sort courses by total tagged notes (descending)
+      courseStats.sort((a, b) => b.totalTaggedNotes - a.totalTaggedNotes);
       
-      setTagStats(stats);
+      setCourseTagStats(courseStats);
       setOverallStats({
         totalTags: allTags.length,
         totalCustomTags: customTagsData.length,
-        totalPredefinedTags: PredefinedTags.length,
+        usedTagsCount: usedTagIds.size,
         totalTaggedNotes,
         totalUntaggedNotes,
-        mostUsedTag: stats[0] || null,
       });
     } catch (error) {
       console.error('Error loading tag stats:', error);
     }
   };
 
-  const StatCard = ({ stat }: { stat: TagStats }) => {
-    const isExpanded = expandedTagId === stat.tag.id;
+  const CourseCard = ({ courseStat }: { courseStat: CourseTagStats }) => {
+    const isExpanded = expandedCourseId === courseStat.courseId;
     
     return (
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={() => {
-          if (stat.courses.length > 0) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setExpandedTagId(isExpanded ? null : stat.tag.id);
-          }
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setExpandedCourseId(isExpanded ? null : courseStat.courseId);
         }}
-        style={styles.statCard}
+        style={styles.courseCard}
       >
-        <View style={[styles.tagIcon, { backgroundColor: stat.tag.color + '20' }]}>
-          <Ionicons name={stat.tag.icon as any} size={28} color={stat.tag.color} />
-        </View>
-        
-        <View style={styles.statContent}>
-          <View style={styles.statHeader}>
-            <Text style={styles.tagName}>{stat.tag.name}</Text>
-            {stat.courses.length > 0 && (
-              <Ionicons 
-                name={isExpanded ? 'chevron-up' : 'chevron-down'} 
-                size={20} 
-                color={Colors.text.secondary} 
-              />
-            )}
+        <View style={styles.courseCardHeader}>
+          <View style={styles.courseIconContainer}>
+            <Ionicons name="book" size={24} color={Colors.accentGradient[0]} />
           </View>
           
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stat.noteCount}</Text>
-              <Text style={styles.statLabel}>Not</Text>
-            </View>
-            
-            <View style={styles.statDivider} />
-            
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stat.courseCount}</Text>
-              <Text style={styles.statLabel}>Ders</Text>
-            </View>
-            
-            <View style={styles.statDivider} />
-            
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stat.totalPages}</Text>
-              <Text style={styles.statLabel}>Sayfa</Text>
-            </View>
+          <View style={styles.courseCardContent}>
+            <Text style={styles.courseCardName}>{courseStat.courseName}</Text>
+            <Text style={styles.courseCardSubtitle}>
+              {courseStat.tags.length} etiket • {courseStat.totalTaggedNotes} not
+            </Text>
           </View>
 
-          {/* Expanded Course List */}
-          {isExpanded && stat.courses.length > 0 && (
-            <View style={styles.courseList}>
-              <Text style={styles.courseListTitle}>Kullanıldığı Dersler:</Text>
-              {stat.courses.map((course) => (
-                <View key={course.id} style={styles.courseItem}>
-                  <Ionicons name="book-outline" size={16} color={Colors.text.secondary} />
-                  <Text style={styles.courseName}>{course.name}</Text>
-                  <Text style={styles.courseNoteCount}>({course.noteCount} not)</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          <Ionicons 
+            name={isExpanded ? 'chevron-up' : 'chevron-down'} 
+            size={20} 
+            color={Colors.text.secondary} 
+          />
         </View>
+
+        {/* Expanded Tag List */}
+        {isExpanded && (
+          <View style={styles.tagsList}>
+            {courseStat.tags.map((tagStat) => (
+              <View key={tagStat.tag.id} style={styles.tagItem}>
+                <View style={[styles.tagItemIcon, { backgroundColor: tagStat.tag.color + '20' }]}>
+                  <Ionicons name={tagStat.tag.icon as any} size={18} color={tagStat.tag.color} />
+                </View>
+                
+                <View style={styles.tagItemContent}>
+                  <Text style={styles.tagItemName}>{tagStat.tag.name}</Text>
+                  <Text style={styles.tagItemNotes}>
+                    {tagStat.notes.map(n => n.name).join(', ')}
+                  </Text>
+                </View>
+                
+                <View style={styles.tagItemBadge}>
+                  <Text style={styles.tagItemCount}>{tagStat.noteCount}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -220,7 +207,7 @@ export const TagStatsScreen = ({ navigation }: any) => {
       
       <View style={styles.overallGrid}>
         <View style={styles.overallItem}>
-          <Ionicons name="pricetag" size={24} color={Colors.accentGradient[0]} />
+          <Ionicons name="pricetags" size={24} color={Colors.accentGradient[0]} />
           <Text style={styles.overallValue}>{overallStats.totalTags}</Text>
           <Text style={styles.overallLabel}>Toplam Etiket</Text>
         </View>
@@ -232,34 +219,17 @@ export const TagStatsScreen = ({ navigation }: any) => {
         </View>
         
         <View style={styles.overallItem}>
+          <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+          <Text style={styles.overallValue}>{overallStats.usedTagsCount}</Text>
+          <Text style={styles.overallLabel}>Kullanılan Etiket</Text>
+        </View>
+        
+        <View style={styles.overallItem}>
           <Ionicons name="document-text" size={24} color={Colors.accentGradient[0]} />
           <Text style={styles.overallValue}>{overallStats.totalTaggedNotes}</Text>
           <Text style={styles.overallLabel}>Etiketli Not</Text>
         </View>
-        
-        <View style={styles.overallItem}>
-          <Ionicons name="document-outline" size={24} color={Colors.text.tertiary} />
-          <Text style={styles.overallValue}>{overallStats.totalUntaggedNotes}</Text>
-          <Text style={styles.overallLabel}>Etiketlenmemiş</Text>
-        </View>
       </View>
-
-      {overallStats.mostUsedTag && (
-        <View style={styles.mostUsedSection}>
-          <Text style={styles.mostUsedTitle}>En Çok Kullanılan:</Text>
-          <View style={styles.mostUsedTag}>
-            <View style={[styles.mostUsedIcon, { backgroundColor: overallStats.mostUsedTag.tag.color + '20' }]}>
-              <Ionicons 
-                name={overallStats.mostUsedTag.tag.icon as any} 
-                size={20} 
-                color={overallStats.mostUsedTag.tag.color} 
-              />
-            </View>
-            <Text style={styles.mostUsedName}>{overallStats.mostUsedTag.tag.name}</Text>
-            <Text style={styles.mostUsedCount}>({overallStats.mostUsedTag.noteCount} not)</Text>
-          </View>
-        </View>
-      )}
     </View>
   );
 
@@ -379,123 +349,85 @@ export const TagStatsScreen = ({ navigation }: any) => {
       color: theme.colors.text.secondary,
       textAlign: 'center',
     },
-    mostUsedSection: {
+    courseCard: {
+      backgroundColor: theme.colors.card.background,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.base,
+      marginBottom: Spacing.md,
+    },
+    courseCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    courseIconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: BorderRadius.md,
+      backgroundColor: theme.colors.accentGradient[0] + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: Spacing.md,
+    },
+    courseCardContent: {
+      flex: 1,
+    },
+    courseCardName: {
+      fontSize: Typography.body.fontSize,
+      fontFamily: Typography.body.fontFamily,
+      fontWeight: '600',
+      color: theme.colors.text.primary,
+      marginBottom: 4,
+    },
+    courseCardSubtitle: {
+      fontSize: Typography.caption.fontSize,
+      color: theme.colors.text.secondary,
+    },
+    tagsList: {
+      marginTop: Spacing.md,
+      paddingTop: Spacing.md,
       borderTopWidth: 1,
       borderTopColor: theme.colors.card.border,
-      paddingTop: Spacing.md,
+      gap: Spacing.sm,
     },
-    mostUsedTitle: {
-      fontSize: Typography.callout.fontSize,
-      fontWeight: '600',
-      color: theme.colors.text.secondary,
-      marginBottom: Spacing.sm,
-    },
-    mostUsedTag: {
+    tagItem: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.background,
-      borderRadius: BorderRadius.lg,
-      padding: Spacing.md,
+      borderRadius: BorderRadius.md,
+      padding: Spacing.sm,
     },
-    mostUsedIcon: {
-      width: 40,
-      height: 40,
+    tagItemIcon: {
+      width: 36,
+      height: 36,
       borderRadius: BorderRadius.sm,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: Spacing.sm,
     },
-    mostUsedName: {
+    tagItemContent: {
       flex: 1,
-      fontSize: Typography.body.fontSize,
-      fontWeight: '600',
-      color: theme.colors.text.primary,
     },
-    mostUsedCount: {
+    tagItemName: {
       fontSize: Typography.callout.fontSize,
-      color: theme.colors.text.secondary,
-    },
-    statCard: {
-      backgroundColor: theme.colors.card.background,
-      borderRadius: BorderRadius.lg,
-      padding: Spacing.base,
-      marginBottom: Spacing.sm,
-    },
-    tagIcon: {
-      width: 56,
-      height: 56,
-      borderRadius: BorderRadius.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: Spacing.sm,
-    },
-    statContent: {
-      flex: 1,
-    },
-    statHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: Spacing.sm,
-    },
-    tagName: {
-      fontSize: Typography.body.fontSize,
-      fontFamily: Typography.body.fontFamily,
       fontWeight: '600',
-      color: theme.colors.text.primary,
-      marginBottom: Spacing.sm,
-    },
-    statsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.md,
-    },
-    statItem: {
-      alignItems: 'center',
-    },
-    statValue: {
-      fontSize: Typography.headline.fontSize,
-      fontWeight: '700',
       color: theme.colors.text.primary,
       marginBottom: 2,
     },
-    statLabel: {
+    tagItemNotes: {
       fontSize: Typography.caption.fontSize,
       color: theme.colors.text.secondary,
+      lineHeight: 16,
     },
-    statDivider: {
-      width: 1,
-      height: 32,
-      backgroundColor: theme.colors.card.border,
+    tagItemBadge: {
+      backgroundColor: theme.colors.accentGradient[0] + '20',
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 4,
+      borderRadius: BorderRadius.sm,
     },
-    courseList: {
-      marginTop: Spacing.md,
-      paddingTop: Spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.card.border,
-    },
-    courseListTitle: {
+    tagItemCount: {
       fontSize: Typography.caption.fontSize,
-      fontWeight: '600',
-      color: theme.colors.text.secondary,
-      marginBottom: Spacing.sm,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-    },
-    courseItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: Spacing.xs,
-      gap: Spacing.sm,
-    },
-    courseName: {
-      flex: 1,
-      fontSize: Typography.callout.fontSize,
-      color: theme.colors.text.primary,
-    },
-    courseNoteCount: {
-      fontSize: Typography.caption.fontSize,
-      color: theme.colors.text.secondary,
+      fontWeight: '700',
+      color: theme.colors.accentGradient[0],
     },
     emptyState: {
       alignItems: 'center',
@@ -538,12 +470,12 @@ export const TagStatsScreen = ({ navigation }: any) => {
           {/* Overall Stats - Always show */}
           <OverallStatsCard />
 
-          {tagStats.length > 0 ? (
+          {courseTagStats.length > 0 ? (
             <>
-              {/* Stats List */}
-              <Text style={styles.sectionTitle}>Etiket Detayları</Text>
-              {tagStats.map((stat) => (
-                <StatCard key={stat.tag.id} stat={stat} />
+              {/* Course List */}
+              <Text style={styles.sectionTitle}>Dersler ve Etiketler</Text>
+              {courseTagStats.map((courseStat) => (
+                <CourseCard key={courseStat.courseId} courseStat={courseStat} />
               ))}
             </>
           ) : (
