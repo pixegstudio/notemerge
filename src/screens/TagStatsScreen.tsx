@@ -71,10 +71,6 @@ export const TagStatsScreen = ({ navigation }: any) => {
         StorageService.getNotes(),
       ]);
 
-      console.log('📊 Loading Tag Stats...');
-      console.log('   Total courses:', courses.length);
-      console.log('   Total notes:', allNotes.length);
-
       // Populate courses with their notes
       courses.forEach(course => {
         course.notes = allNotes.filter(note => note.courseId === course.id);
@@ -90,8 +86,6 @@ export const TagStatsScreen = ({ navigation }: any) => {
 
       // Process each course
       courses.forEach((course) => {
-        console.log(`   Course: ${course.name}, Notes: ${course.notes.length}`);
-        
         const courseTags: CourseTagStats['tags'] = [];
         let courseTaggedNotes = 0;
 
@@ -100,14 +94,12 @@ export const TagStatsScreen = ({ navigation }: any) => {
           const notesWithTag: Array<{ id: string; name: string }> = [];
 
           course.notes.forEach((note) => {
-            console.log(`      Note: ${note.name}, Tags:`, note.tags);
             if (note.tags?.includes(tag.id)) {
               notesWithTag.push({
                 id: note.id,
                 name: note.name,
               });
               usedTagIds.add(tag.id);
-              console.log(`         ✓ Has tag: ${tag.name}`);
             }
           });
 
@@ -132,26 +124,17 @@ export const TagStatsScreen = ({ navigation }: any) => {
 
         // Only add course if it has tagged notes
         if (courseTags.length > 0) {
-          console.log(`   ✅ Adding course: ${course.name} with ${courseTags.length} tags`);
           courseStats.push({
             courseId: course.id,
             courseName: course.name,
-            tags: courseTags.sort((a, b) => b.noteCount - a.noteCount), // Sort tags by usage
+            tags: courseTags.sort((a, b) => b.noteCount - a.noteCount),
             totalTaggedNotes: courseTaggedNotes,
           });
-        } else {
-          console.log(`   ⚠️ Skipping course: ${course.name} (no tagged notes)`);
         }
       });
 
       // Sort courses by total tagged notes (descending)
       courseStats.sort((a, b) => b.totalTaggedNotes - a.totalTaggedNotes);
-      
-      console.log('📊 Final stats:', {
-        courseStats: courseStats.length,
-        totalTaggedNotes,
-        usedTags: usedTagIds.size,
-      });
       
       setCourseTagStats(courseStats);
       setOverallStats({

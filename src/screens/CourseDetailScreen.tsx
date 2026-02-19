@@ -888,18 +888,11 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         ? currentTags.filter(t => t !== tagId)
         : [...currentTags, tagId];
 
-      console.log('🏷️ Updating tags for note:', selectedNote.name);
-      console.log('   Current tags:', currentTags);
-      console.log('   Updated tags:', updatedTags);
-
       await StorageService.updateNote(selectedNote.id, { tags: updatedTags });
-      
-      console.log('✅ Tags saved successfully');
-      
       setShowTagModal(false);
       loadCourse();
     } catch (error) {
-      console.error('❌ Error updating tags:', error);
+      console.error('Error updating tags:', error);
     }
   };
 

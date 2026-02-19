@@ -266,6 +266,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderBottomColor: theme.colors.card.border,
   },
   tagFiltersContent: {
+    flexDirection: 'row',
     paddingHorizontal: Spacing.base,
     gap: Spacing.sm,
   },
