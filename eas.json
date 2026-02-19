@@ -13,14 +13,11 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "simulator": false,
-        "bundleIdentifier": "com.notemerge.app"
+        "simulator": false
       }
     },
     "production": {
-      "ios": {
-        "bundleIdentifier": "com.notemerge.app"
-      }
+      "ios": {}
     }
   },
   "submit": {
