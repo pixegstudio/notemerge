@@ -127,24 +127,24 @@ const createStyles = (theme: any) => StyleSheet.create({
     elevation: 3,
   },
   statGradient: {
-    padding: Spacing.base,
+    padding: Spacing.sm,
     alignItems: 'center',
-    gap: Spacing.xs,
-    minHeight: 100,
+    gap: 4,
+    minHeight: 85,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginTop: 4,
+    marginTop: 2,
   },
   statLabel: {
-    fontSize: Typography.caption.fontSize,
+    fontSize: 10,
     fontFamily: Typography.caption.fontFamily,
     fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.9)',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     textAlign: 'center',
   },
   mostActiveCard: {
@@ -161,12 +161,13 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   mostActiveTitle: {
-    fontSize: Typography.footnote.fontSize,
+    fontSize: 11,
     fontFamily: Typography.footnote.fontFamily,
     fontWeight: '600',
     color: theme.colors.text.secondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+    flexShrink: 0,
   },
   mostActiveContent: {
     flexDirection: 'row',
@@ -805,7 +806,7 @@ export const HomeScreen = ({ navigation }: any) => {
             />
           </View>
 
-          {/* Statistics Cards */}
+          {/* Statistics Cards - 2x2 Grid */}
         {courses.length > 0 && (
           <View style={styles.statsContainer}>
             <View style={styles.statsRow}>
@@ -817,7 +818,7 @@ export const HomeScreen = ({ navigation }: any) => {
                   end={{ x: 1, y: 1 }}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="folder" size={24} color="#FFF" />
+                  <Ionicons name="folder" size={20} color="#FFF" />
                   <Text style={styles.statValue}>{courses.length}</Text>
                   <Text style={styles.statLabel}>Ders</Text>
                 </LinearGradient>
@@ -831,14 +832,16 @@ export const HomeScreen = ({ navigation }: any) => {
                   end={{ x: 1, y: 1 }}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="document-text" size={24} color="#FFF" />
+                  <Ionicons name="document-text" size={20} color="#FFF" />
                   <Text style={styles.statValue}>
                     {courses.reduce((sum, course) => sum + course.notes.length, 0)}
                   </Text>
                   <Text style={styles.statLabel}>Not</Text>
                 </LinearGradient>
               </View>
+            </View>
 
+            <View style={styles.statsRow}>
               {/* Total Pages */}
               <View style={styles.statCard}>
                 <LinearGradient
@@ -847,7 +850,7 @@ export const HomeScreen = ({ navigation }: any) => {
                   end={{ x: 1, y: 1 }}
                   style={styles.statGradient}
                 >
-                  <Ionicons name="albums" size={24} color="#FFF" />
+                  <Ionicons name="albums" size={20} color="#FFF" />
                   <Text style={styles.statValue}>
                     {courses.reduce((sum, course) => 
                       sum + course.notes.reduce((noteSum, note) => 
@@ -856,6 +859,34 @@ export const HomeScreen = ({ navigation }: any) => {
                     )}
                   </Text>
                   <Text style={styles.statLabel}>Sayfa</Text>
+                </LinearGradient>
+              </View>
+
+              {/* This Month's Notes */}
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={['#A78BFA', '#C4B5FD']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.statGradient}
+                >
+                  <Ionicons name="calendar" size={20} color="#FFF" />
+                  <Text style={styles.statValue}>
+                    {(() => {
+                      const now = new Date();
+                      const currentMonth = now.getMonth();
+                      const currentYear = now.getFullYear();
+                      
+                      return courses.reduce((sum, course) => 
+                        sum + course.notes.filter(note => {
+                          const noteDate = new Date(note.createdAt);
+                          return noteDate.getMonth() === currentMonth && 
+                                 noteDate.getFullYear() === currentYear;
+                        }).length, 0
+                      );
+                    })()}
+                  </Text>
+                  <Text style={styles.statLabel}>Bu Ay</Text>
                 </LinearGradient>
               </View>
             </View>
