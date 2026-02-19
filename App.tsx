@@ -29,12 +29,10 @@ const StatusBarManager = () => {
   useEffect(() => {
     const updateStatusBar = async () => {
       const barStyle = theme.id === 'light' ? 'dark-content' : 'light-content';
-      console.log('🎨 StatusBar: Setting barStyle to', barStyle, 'for theme:', theme.id);
       
       // Set root background color
       if (Platform.OS === 'android') {
         await SystemUI.setBackgroundColorAsync('transparent');
-        console.log('📱 StatusBar: Android - Set background to transparent');
       }
       
       // Set status bar style
@@ -43,7 +41,6 @@ const StatusBarManager = () => {
       if (Platform.OS === 'android') {
         StatusBar.setTranslucent(true);
         StatusBar.setBackgroundColor('transparent');
-        console.log('📱 StatusBar: Android - Set translucent and transparent background');
       }
     };
     

@@ -87,6 +87,7 @@ const TagColors = [
 ] as const;
 
 export interface Theme {
+  id: 'light' | 'dark';
   colors: {
     // Background Colors
     background: string;
@@ -128,6 +129,7 @@ export interface Theme {
 
 // Night Light Theme (Dark Mode - from screenshot)
 export const NightTheme: Theme = {
+  id: 'dark',
   colors: {
     background: '#1E1E2E',
     backgroundSecondary: '#2A2A3E',
@@ -163,6 +165,7 @@ export const NightTheme: Theme = {
 
 // Day Light Theme (Light Mode)
 export const DayTheme: Theme = {
+  id: 'light',
   colors: {
     background: '#FFFFFF',
     backgroundSecondary: '#F8F9FA',
