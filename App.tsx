@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { Text, TextInput } from 'react-native';
 import * as SplashScreenExpo from 'expo-splash-screen';
 import { useFonts, Inter_300Light, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
@@ -58,7 +57,6 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <StatusBar style="light" />
         <RootNavigator />
       </ThemeProvider>
     </SafeAreaProvider>

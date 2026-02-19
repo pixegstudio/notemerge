@@ -231,8 +231,8 @@ export const TagManagementScreen = ({ navigation }: any) => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style={theme.id === 'light' ? 'dark' : 'light'} />
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar style={theme.id === 'light' ? 'dark' : 'light'} backgroundColor="transparent" translucent={false} />
       <LinearGradient
         colors={[Colors.background, Colors.backgroundSecondary]}
         style={styles.gradient}
