@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -231,6 +232,7 @@ export const TagManagementScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style={theme.id === 'light' ? 'dark' : 'light'} />
       <LinearGradient
         colors={[Colors.background, Colors.backgroundSecondary]}
         style={styles.gradient}

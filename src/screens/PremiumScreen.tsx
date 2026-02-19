@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -460,6 +461,7 @@ export const PremiumScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
+      <StatusBar style={theme.id === 'light' ? 'dark' : 'light'} />
       <LinearGradient
         colors={[Colors.background, Colors.backgroundSecondary]}
         style={styles.gradient}

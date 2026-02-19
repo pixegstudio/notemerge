@@ -8,6 +8,7 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -178,6 +179,7 @@ export const SettingsScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar style={theme.id === 'light' ? 'dark' : 'light'} />
       <LinearGradient
         colors={[theme.colors.background, theme.colors.backgroundSecondary]}
         style={styles.gradient}

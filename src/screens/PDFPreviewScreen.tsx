@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, Dimensions, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -251,6 +252,7 @@ export const PDFPreviewScreen = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
+      <StatusBar style={theme.id === 'light' ? 'dark' : 'light'} />
       <LinearGradient
         colors={[Colors.background, Colors.backgroundSecondary]}
         style={styles.gradient}
