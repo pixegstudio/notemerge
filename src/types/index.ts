@@ -28,6 +28,7 @@ export interface Note {
   settings: PDFSettings;
   pdfPath?: string;
   thumbnail?: string;
+  isArchived?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -54,4 +54,10 @@ export const PredefinedTags: TagType[] = [
     color: '#EC4899',
     icon: 'list',
   },
+  {
+    id: 'merged',
+    name: 'Birleştirilmiş',
+    color: '#10B981',
+    icon: 'git-merge',
+  },
 ];

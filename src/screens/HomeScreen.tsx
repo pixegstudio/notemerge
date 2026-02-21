@@ -8,6 +8,7 @@ import {
   Dimensions,
   Share,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -107,18 +108,19 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   statsContainer: {
-    paddingHorizontal: Spacing.base,
     paddingBottom: Spacing.md,
-    gap: Spacing.md,
+  },
+  statsScrollView: {
+    paddingLeft: GRID_PADDING,
+    paddingRight: GRID_PADDING + (CARD_WIDTH / 2),
   },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.xs,
+    gap: GRID_GAP,
   },
   statCard: {
-    width: 80,
-    height: 80,
+    width: CARD_WIDTH,
+    aspectRatio: 1,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -150,53 +152,60 @@ const createStyles = (theme: any) => StyleSheet.create({
     textAlign: 'center',
   },
   mostActiveCard: {
+    width: CARD_WIDTH,
+    aspectRatio: 1,
     backgroundColor: theme.colors.card.background,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
+    padding: Spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.card.border,
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   mostActiveHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-    marginBottom: Spacing.sm,
+    gap: 4,
   },
   mostActiveTitle: {
-    fontSize: 11,
-    fontFamily: Typography.footnote.fontFamily,
+    fontSize: 9,
+    fontFamily: Typography.caption.fontFamily,
     fontWeight: '600',
     color: theme.colors.text.secondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    flexShrink: 0,
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
   mostActiveContent: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: 4,
   },
   mostActiveIcon: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   mostActiveInfo: {
-    flex: 1,
+    alignItems: 'center',
   },
   mostActiveName: {
-    fontSize: Typography.body.fontSize,
-    fontFamily: Typography.body.fontFamily,
-    fontWeight: '600',
+    fontSize: 11,
+    fontFamily: Typography.footnote.fontFamily,
+    fontWeight: '700',
     color: theme.colors.text.primary,
-    marginBottom: 2,
+    textAlign: 'center',
   },
   mostActiveStats: {
-    fontSize: Typography.caption.fontSize,
+    fontSize: 8,
     fontFamily: Typography.caption.fontFamily,
     color: theme.colors.text.secondary,
+    textAlign: 'center',
+    marginTop: 2,
   },
   activityCard: {
     backgroundColor: theme.colors.card.background,
@@ -401,6 +410,59 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: Typography.footnote.fontSize,
     color: theme.colors.text.tertiary,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderTopLeftRadius: BorderRadius['2xl'],
+    borderTopRightRadius: BorderRadius['2xl'],
+    paddingBottom: Spacing.xl,
+  },
+  menuHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: theme.colors.text.tertiary,
+    borderRadius: BorderRadius.full,
+    alignSelf: 'center',
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.base,
+  },
+  menuTitle: {
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.title3.fontWeight,
+    color: theme.colors.text.primary,
+    marginBottom: Spacing.base,
+    paddingHorizontal: Spacing.base,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.base,
+    gap: Spacing.md,
+  },
+  menuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuText: {
+    flex: 1,
+  },
+  menuItemTitle: {
+    fontSize: Typography.body.fontSize,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+  },
+  menuItemSubtitle: {
+    fontSize: Typography.footnote.fontSize,
+    color: theme.colors.text.secondary,
+    marginTop: 2,
+  },
 });
 
 export const HomeScreen = ({ navigation }: any) => {
@@ -550,6 +612,8 @@ export const HomeScreen = ({ navigation }: any) => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [customTags, setCustomTags] = useState<any[]>([]);
+  const [showCourseMenu, setShowCourseMenu] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
   const toggleViewMode = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -585,6 +649,55 @@ export const HomeScreen = ({ navigation }: any) => {
 
   const handleCoursePress = (courseId: string) => {
     navigation.navigate('CourseDetail', { courseId });
+  };
+
+  const handleCourseMenu = (course: Course) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSelectedCourse(course);
+    setShowCourseMenu(true);
+  };
+
+  const handleArchiveCourse = async () => {
+    if (!selectedCourse) return;
+    
+    try {
+      console.log('🗄️ Archiving course from HomeScreen:', selectedCourse.id, selectedCourse.name);
+      await StorageService.updateCourse(selectedCourse.id, { isArchived: true });
+      console.log('✅ Course archived successfully');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowCourseMenu(false);
+      loadData();
+    } catch (error) {
+      console.error('❌ Error archiving course:', error);
+      Alert.alert('Hata', 'Ders arşivlenirken bir hata oluştu.');
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!selectedCourse) return;
+    
+    Alert.alert(
+      'Dersi Sil',
+      `"${selectedCourse.name}" dersini ve tüm notlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`,
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await StorageService.deleteCourse(selectedCourse.id);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setShowCourseMenu(false);
+              loadData();
+            } catch (error) {
+              console.error('Error deleting course:', error);
+              Alert.alert('Hata', 'Ders silinirken bir hata oluştu.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleShareCourse = async (course: Course) => {
@@ -637,40 +750,64 @@ export const HomeScreen = ({ navigation }: any) => {
     const totalPages = course.notes?.reduce((sum, note) => sum + (note.pages?.length || 0), 0) || 0;
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => handleCoursePress(course.id)}
-        onLongPress={() => handleShareCourse(course)}
-        style={styles.courseCardContainer}
-      >
-        <LinearGradient
-          colors={[course.color, course.colorEnd]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.courseCard}
+      <View style={styles.courseCardContainer}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => handleCoursePress(course.id)}
+          onLongPress={() => handleCourseMenu(course)}
+          style={{ flex: 1 }}
         >
-          <Ionicons name={course.icon as any} size={28} color={Colors.text.inverse} />
-          
-          <Text style={styles.courseName} numberOfLines={2}>
-            {course.name}
-          </Text>
-          
-          <View style={styles.courseStats}>
-            <View style={styles.statBadge}>
-              <Ionicons name="document-text" size={12} color={Colors.text.inverse} />
-              <Text style={styles.statText}>{noteCount}</Text>
-            </View>
-            {totalPages > 0 && (
+          <LinearGradient
+            colors={[course.color, course.colorEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.courseCard}
+          >
+            <Ionicons name={course.icon as any} size={28} color={Colors.text.inverse} />
+            
+            <Text style={styles.courseName} numberOfLines={2}>
+              {course.name}
+            </Text>
+            
+            <View style={styles.courseStats}>
               <View style={styles.statBadge}>
-                <Ionicons name="albums" size={12} color={Colors.text.inverse} />
-                <Text style={styles.statText}>{totalPages}</Text>
+                <Ionicons name="document-text" size={12} color={Colors.text.inverse} />
+                <Text style={styles.statText}>{noteCount}</Text>
               </View>
-            )}
-          </View>
-          
-          <Text style={styles.courseDate}>{formatDate(course.updatedAt)}</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+              {totalPages > 0 && (
+                <View style={styles.statBadge}>
+                  <Ionicons name="albums" size={12} color={Colors.text.inverse} />
+                  <Text style={styles.statText}>{totalPages}</Text>
+                </View>
+              )}
+            </View>
+            
+            <Text style={styles.courseDate}>{formatDate(course.updatedAt)}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleCourseMenu(course);
+          }}
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+          }}
+        >
+          <Ionicons name="ellipsis-vertical" size={16} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -679,33 +816,45 @@ export const HomeScreen = ({ navigation }: any) => {
     const totalPages = course.notes?.reduce((sum, note) => sum + (note.pages?.length || 0), 0) || 0;
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => handleCoursePress(course.id)}
-        onLongPress={() => handleShareCourse(course)}
-        style={styles.courseListItem}
-      >
-        <LinearGradient
-          colors={[course.color, course.colorEnd]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.courseListIcon}
+      <View style={{ position: 'relative' }}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => handleCoursePress(course.id)}
+          onLongPress={() => handleCourseMenu(course)}
+          style={styles.courseListItem}
         >
-          <Ionicons name={course.icon as any} size={28} color={Colors.text.inverse} />
-        </LinearGradient>
+          <LinearGradient
+            colors={[course.color, course.colorEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.courseListIcon}
+          >
+            <Ionicons name={course.icon as any} size={28} color={Colors.text.inverse} />
+          </LinearGradient>
 
-        <View style={styles.courseListContent}>
-          <Text style={styles.courseListName}>{course.name}</Text>
-          <View style={styles.courseListMeta}>
-            <Text style={styles.courseListMetaText}>
-              {noteCount} not • {totalPages} sayfa
-            </Text>
-            <Text style={styles.courseListDate}>{formatDate(course.updatedAt)}</Text>
+          <View style={styles.courseListContent}>
+            <Text style={styles.courseListName}>{course.name}</Text>
+            <View style={styles.courseListMeta}>
+              <Text style={styles.courseListMetaText}>
+                {noteCount} not • {totalPages} sayfa
+              </Text>
+              <Text style={styles.courseListDate}>{formatDate(course.updatedAt)}</Text>
+            </View>
           </View>
-        </View>
 
-        <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
-      </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={(e) => {
+              handleCourseMenu(course);
+            }}
+            style={{
+              padding: Spacing.sm,
+            }}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color={Colors.text.tertiary} />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -808,132 +957,138 @@ export const HomeScreen = ({ navigation }: any) => {
             />
           </View>
 
-          {/* Statistics Cards - 1x4 Grid */}
+          {/* Statistics Cards - Horizontal Carousel */}
         {courses.length > 0 && (
           <View style={styles.statsContainer}>
-            <View style={styles.statsRow}>
-              {/* Total Courses */}
-              <View style={styles.statCard}>
-                <LinearGradient
-                  colors={['#5A7FE8', '#7B9BF0']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.statGradient}
-                >
-                  <Ionicons name="folder" size={18} color="#FFF" />
-                  <Text style={styles.statValue}>{courses.length}</Text>
-                  <Text style={styles.statLabel}>Ders</Text>
-                </LinearGradient>
-              </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.statsScrollView}
+              snapToInterval={CARD_WIDTH + GRID_GAP}
+              decelerationRate="fast"
+            >
+              <View style={styles.statsRow}>
+                {/* Most Active Course - EN BAŞTA */}
+                {(() => {
+                  const mostActive = courses.reduce((max, course) => {
+                    const noteCount = course.notes.length;
+                    return noteCount > (max.notes?.length || 0) ? course : max;
+                  }, courses[0]);
 
-              {/* Total Notes */}
-              <View style={styles.statCard}>
-                <LinearGradient
-                  colors={['#4ECDC4', '#6FE0D8']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.statGradient}
-                >
-                  <Ionicons name="document-text" size={18} color="#FFF" />
-                  <Text style={styles.statValue}>
-                    {courses.reduce((sum, course) => sum + course.notes.length, 0)}
-                  </Text>
-                  <Text style={styles.statLabel}>Not</Text>
-                </LinearGradient>
-              </View>
-
-              {/* Total Pages */}
-              <View style={styles.statCard}>
-                <LinearGradient
-                  colors={['#FFB84D', '#FFC870']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.statGradient}
-                >
-                  <Ionicons name="albums" size={18} color="#FFF" />
-                  <Text style={styles.statValue}>
-                    {courses.reduce((sum, course) => 
-                      sum + course.notes.reduce((noteSum, note) => 
-                        noteSum + (note.pages?.length || 0), 0
-                      ), 0
-                    )}
-                  </Text>
-                  <Text style={styles.statLabel}>Sayfa</Text>
-                </LinearGradient>
-              </View>
-
-              {/* This Month's Notes */}
-              <View style={styles.statCard}>
-                <LinearGradient
-                  colors={['#A78BFA', '#C4B5FD']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.statGradient}
-                >
-                  <Ionicons name="calendar" size={18} color="#FFF" />
-                  <Text style={styles.statValue}>
-                    {(() => {
-                      const now = new Date();
-                      const currentMonth = now.getMonth();
-                      const currentYear = now.getFullYear();
-                      
-                      return courses.reduce((sum, course) => 
-                        sum + course.notes.filter(note => {
-                          const noteDate = new Date(note.createdAt);
-                          return noteDate.getMonth() === currentMonth && 
-                                 noteDate.getFullYear() === currentYear;
-                        }).length, 0
-                      );
-                    })()}
-                  </Text>
-                  <Text style={styles.statLabel}>Bu Ay</Text>
-                </LinearGradient>
-              </View>
-            </View>
-
-            {/* Most Active Course */}
-            {(() => {
-              const mostActive = courses.reduce((max, course) => {
-                const noteCount = course.notes.length;
-                return noteCount > (max.notes?.length || 0) ? course : max;
-              }, courses[0]);
-
-              if (mostActive && mostActive.notes.length > 0) {
-                return (
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => handleCoursePress(mostActive.id)}
-                    style={styles.mostActiveCard}
-                  >
-                    <View style={styles.mostActiveHeader}>
-                      <Ionicons name="flame" size={20} color="#FF6B6B" />
-                      <Text style={styles.mostActiveTitle}>En Aktif Ders</Text>
-                    </View>
-                    <View style={styles.mostActiveContent}>
-                      <LinearGradient
-                        colors={[mostActive.color, mostActive.colorEnd]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.mostActiveIcon}
+                  if (mostActive && mostActive.notes.length > 0) {
+                    return (
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => handleCoursePress(mostActive.id)}
+                        style={styles.mostActiveCard}
                       >
-                        <Ionicons name={mostActive.icon as any} size={20} color="#FFF" />
-                      </LinearGradient>
-                      <View style={styles.mostActiveInfo}>
-                        <Text style={styles.mostActiveName}>{mostActive.name}</Text>
-                        <Text style={styles.mostActiveStats}>
-                          {mostActive.notes.length} not • {
-                            mostActive.notes.reduce((sum, note) => sum + (note.pages?.length || 0), 0)
-                          } sayfa
-                        </Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
-                    </View>
-                  </TouchableOpacity>
-                );
-              }
-              return null;
-            })()}
+                        <View style={styles.mostActiveHeader}>
+                          <Ionicons name="flame" size={16} color="#FF6B6B" />
+                          <Text style={styles.mostActiveTitle}>En Aktif</Text>
+                        </View>
+                        <View style={styles.mostActiveContent}>
+                          <LinearGradient
+                            colors={[mostActive.color, mostActive.colorEnd]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.mostActiveIcon}
+                          >
+                            <Ionicons name={mostActive.icon as any} size={18} color="#FFF" />
+                          </LinearGradient>
+                          <View style={styles.mostActiveInfo}>
+                            <Text style={styles.mostActiveName} numberOfLines={1}>
+                              {mostActive.name}
+                            </Text>
+                            <Text style={styles.mostActiveStats} numberOfLines={1}>
+                              {mostActive.notes.length} not
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  }
+                  return null;
+                })()}
 
+                {/* Total Courses */}
+                <View style={styles.statCard}>
+                  <LinearGradient
+                    colors={['#5A7FE8', '#7B9BF0']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.statGradient}
+                  >
+                    <Ionicons name="folder" size={18} color="#FFF" />
+                    <Text style={styles.statValue}>{courses.length}</Text>
+                    <Text style={styles.statLabel}>Ders</Text>
+                  </LinearGradient>
+                </View>
+
+                {/* Total Notes */}
+                <View style={styles.statCard}>
+                  <LinearGradient
+                    colors={['#4ECDC4', '#6FE0D8']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.statGradient}
+                  >
+                    <Ionicons name="document-text" size={18} color="#FFF" />
+                    <Text style={styles.statValue}>
+                      {courses.reduce((sum, course) => sum + course.notes.length, 0)}
+                    </Text>
+                    <Text style={styles.statLabel}>Not</Text>
+                  </LinearGradient>
+                </View>
+
+                {/* Total Pages */}
+                <View style={styles.statCard}>
+                  <LinearGradient
+                    colors={['#FFB84D', '#FFC870']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.statGradient}
+                  >
+                    <Ionicons name="albums" size={18} color="#FFF" />
+                    <Text style={styles.statValue}>
+                      {courses.reduce((sum, course) => 
+                        sum + course.notes.reduce((noteSum, note) => 
+                          noteSum + (note.pages?.length || 0), 0
+                        ), 0
+                      )}
+                    </Text>
+                    <Text style={styles.statLabel}>Sayfa</Text>
+                  </LinearGradient>
+                </View>
+
+                {/* This Month's Notes */}
+                <View style={styles.statCard}>
+                  <LinearGradient
+                    colors={['#A78BFA', '#C4B5FD']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.statGradient}
+                  >
+                    <Ionicons name="calendar" size={18} color="#FFF" />
+                    <Text style={styles.statValue}>
+                      {(() => {
+                        const now = new Date();
+                        const currentMonth = now.getMonth();
+                        const currentYear = now.getFullYear();
+                        
+                        return courses.reduce((sum, course) => 
+                          sum + course.notes.filter(note => {
+                            const noteDate = new Date(note.createdAt);
+                            return noteDate.getMonth() === currentMonth && 
+                                   noteDate.getFullYear() === currentYear;
+                          }).length, 0
+                        );
+                      })()}
+                    </Text>
+                    <Text style={styles.statLabel}>Bu Ay</Text>
+                  </LinearGradient>
+                </View>
+              </View>
+            </ScrollView>
           </View>
           )}
 
@@ -1040,6 +1195,93 @@ export const HomeScreen = ({ navigation }: any) => {
             </>
           )}
         </ScrollView>
+
+        {/* Course Context Menu */}
+        <Modal
+          visible={showCourseMenu}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowCourseMenu(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setShowCourseMenu(false)}
+            style={styles.modalOverlay}
+          >
+            <View style={styles.menuContainer}>
+              <View style={styles.menuHandle} />
+              <Text style={styles.menuTitle}>
+                {selectedCourse?.name}
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  setShowCourseMenu(false);
+                  if (selectedCourse) {
+                    navigation.navigate('CreateCourse', { courseId: selectedCourse.id });
+                  }
+                }}
+                style={styles.menuItem}
+              >
+                <View style={[styles.menuIcon, { backgroundColor: Colors.status.info + '20' }]}>
+                  <Ionicons name="create-outline" size={20} color={Colors.status.info} />
+                </View>
+                <View style={styles.menuText}>
+                  <Text style={styles.menuItemTitle}>Dersi Düzenle</Text>
+                  <Text style={styles.menuItemSubtitle}>İsim, renk ve ikon değiştir</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  setShowCourseMenu(false);
+                  Alert.alert(
+                    'Dersi Arşivle',
+                    `"${selectedCourse?.name}" dersini arşivlemek istediğinize emin misiniz?`,
+                    [
+                      { text: 'İptal', style: 'cancel' },
+                      {
+                        text: 'Arşivle',
+                        onPress: handleArchiveCourse,
+                      },
+                    ]
+                  );
+                }}
+                style={styles.menuItem}
+              >
+                <View style={[styles.menuIcon, { backgroundColor: Colors.status.warning + '20' }]}>
+                  <Ionicons name="archive-outline" size={20} color={Colors.status.warning} />
+                </View>
+                <View style={styles.menuText}>
+                  <Text style={styles.menuItemTitle}>Arşivle</Text>
+                  <Text style={styles.menuItemSubtitle}>Arşive taşı</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  setShowCourseMenu(false);
+                  handleDeleteCourse();
+                }}
+                style={styles.menuItem}
+              >
+                <View style={[styles.menuIcon, { backgroundColor: Colors.status.error + '20' }]}>
+                  <Ionicons name="trash-outline" size={20} color={Colors.status.error} />
+                </View>
+                <View style={styles.menuText}>
+                  <Text style={styles.menuItemTitle}>Sil</Text>
+                  <Text style={styles.menuItemSubtitle}>Kalıcı olarak sil</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </LinearGradient>
     </SafeAreaView>
   );

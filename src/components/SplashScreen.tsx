@@ -13,11 +13,13 @@ export const SplashScreen = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Image
-          source={require('../../assets/icon.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <View style={styles.iconContainer}>
+          <Image
+            source={require('../../assets/icon.png')}
+            style={styles.logo}
+            resizeMode="cover"
+          />
+        </View>
       </LinearGradient>
     </View>
   );
@@ -34,8 +36,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconContainer: {
+    width: 160,
+    height: 160,
+    borderRadius: 36,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
   logo: {
-    width: 200,
-    height: 200,
+    width: 160,
+    height: 160,
   },
 });

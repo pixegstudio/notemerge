@@ -21,7 +21,8 @@
         "NSCameraUsageDescription": "NoteMerge needs camera access to scan your notes and documents.",
         "NSPhotoLibraryUsageDescription": "NoteMerge needs photo library access to import images.",
         "NSPhotoLibraryAddUsageDescription": "NoteMerge needs permission to save PDFs to your photo library.",
-        "UIViewControllerBasedStatusBarAppearance": true
+        "UIViewControllerBasedStatusBarAppearance": true,
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -31,9 +32,10 @@
       },
       "package": "com.notemerge.app",
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -47,6 +49,12 @@
           "cameraPermission": "NoteMerge needs camera access to scan documents."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4fe57b13-ca1c-43d6-9363-e7a305a962f4"
+      }
+    },
+    "owner": "gurowe"
   }
 }

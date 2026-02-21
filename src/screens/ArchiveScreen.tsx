@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { IconButton, GlassCard } from '../components';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { Typography } from '../constants/typography';
-import { Course } from '../types';
+import { Course, Note } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { StorageService } from '../services/StorageService';
 
@@ -164,6 +164,7 @@ export const ArchiveScreen = ({ navigation }: any) => {
   const styles = createStyles(theme);
   
   const [archivedCourses, setArchivedCourses] = useState<Course[]>([]);
+  const [archivedNotes, setArchivedNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -182,21 +183,27 @@ export const ArchiveScreen = ({ navigation }: any) => {
   const loadArchivedCourses = async () => {
     try {
       const allCourses = await StorageService.getCourses();
-      console.log('📦 All courses:', allCourses.length);
-      console.log('📦 Courses with isArchived:', allCourses.map(c => ({ id: c.id, name: c.name, isArchived: c.isArchived })));
+      const allNotes = await StorageService.getNotes();
       
-      const archived = allCourses.filter(c => c.isArchived);
-      console.log('📦 Archived courses:', archived.length);
+      console.log('📦 All courses:', allCourses.length);
+      console.log('📦 All notes:', allNotes.length);
+      
+      const archivedCoursesData = allCourses.filter(c => c.isArchived);
+      const archivedNotesData = allNotes.filter(n => n.isArchived);
+      
+      console.log('📦 Archived courses:', archivedCoursesData.length);
+      console.log('📦 Archived notes:', archivedNotesData.length);
       
       // Load notes for each archived course
       const coursesWithNotes = await Promise.all(
-        archived.map(async (course) => {
+        archivedCoursesData.map(async (course) => {
           const notes = await StorageService.getNotesByCourse(course.id);
-          return { ...course, notes };
+          return { ...course, notes: notes.filter(n => !n.isArchived) };
         })
       );
       
       setArchivedCourses(coursesWithNotes);
+      setArchivedNotes(archivedNotesData);
     } catch (error) {
       console.error('Error loading archived courses:', error);
     } finally {
@@ -240,15 +247,20 @@ export const ArchiveScreen = ({ navigation }: any) => {
     );
   };
 
-  // Group courses by semester
-  const groupedCourses = archivedCourses.reduce((acc, course) => {
-    const semester = course.semester || 'Diğer';
-    if (!acc[semester]) {
-      acc[semester] = [];
+  // Group by type based on filter
+  const groupedItems: Record<string, (Course | Note)[]> = {};
+  
+  if (filterMode === 'all' || filterMode === 'courses') {
+    if (archivedCourses.length > 0) {
+      groupedItems['Dersler'] = archivedCourses;
     }
-    acc[semester].push(course);
-    return acc;
-  }, {} as Record<string, Course[]>);
+  }
+  
+  if (filterMode === 'all' || filterMode === 'notes') {
+    if (archivedNotes.length > 0) {
+      groupedItems['Notlar'] = archivedNotes;
+    }
+  }
 
   const EmptyState = () => (
     <View style={styles.emptyState}>
@@ -293,6 +305,74 @@ export const ArchiveScreen = ({ navigation }: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleDeletePermanently(course.id, course.name)}
+            style={styles.actionButton}
+          >
+            <Ionicons name="trash" size={22} color={Colors.status.error} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const NoteCard = ({ note }: { note: Note }) => {
+    const handleUnarchiveNote = async () => {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        await StorageService.updateNote(note.id, { isArchived: false });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        loadArchivedCourses();
+      } catch (error) {
+        console.error('Error unarchiving note:', error);
+        Alert.alert('Hata', 'Not arşivden çıkarılırken bir hata oluştu.');
+      }
+    };
+
+    const handleDeleteNote = () => {
+      Alert.alert(
+        'Kalıcı Olarak Sil',
+        `"${note.name}" notunu kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`,
+        [
+          { text: 'İptal', style: 'cancel' },
+          {
+            text: 'Sil',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await StorageService.deleteNote(note.id);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                loadArchivedCourses();
+              } catch (error) {
+                console.error('Error deleting note:', error);
+                Alert.alert('Hata', 'Not silinirken bir hata oluştu.');
+              }
+            },
+          },
+        ]
+      );
+    };
+
+    return (
+      <View style={styles.courseCard}>
+        <View style={[styles.courseIcon, { backgroundColor: Colors.card.background }]}>
+          <Ionicons name="document-text" size={28} color={Colors.text.secondary} />
+        </View>
+        
+        <View style={styles.courseContent}>
+          <Text style={styles.courseName}>{note.name}</Text>
+          <Text style={styles.courseMeta}>
+            {note.pages?.length || 0} sayfa
+          </Text>
+        </View>
+        
+        <View style={styles.courseActions}>
+          <TouchableOpacity
+            onPress={handleUnarchiveNote}
+            style={styles.actionButton}
+          >
+            <Ionicons name="arrow-undo" size={22} color={Colors.status.success} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDeleteNote}
             style={styles.actionButton}
           >
             <Ionicons name="trash" size={22} color={Colors.status.error} />
@@ -369,20 +449,30 @@ export const ArchiveScreen = ({ navigation }: any) => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {archivedCourses.length === 0 ? (
+          {Object.keys(groupedItems).length === 0 ? (
             <EmptyState />
           ) : (
-            Object.entries(groupedCourses).map(([semester, courses]) => (
-              <View key={semester} style={styles.semesterSection}>
+            Object.entries(groupedItems).map(([category, items]) => (
+              <View key={category} style={styles.semesterSection}>
                 <View style={styles.semesterHeader}>
-                  <Ionicons name="calendar" size={20} color={Colors.accentGradient[0]} />
-                  <Text style={styles.semesterTitle}>{semester}</Text>
-                  <Text style={styles.semesterCount}>({courses.length})</Text>
+                  <Ionicons 
+                    name={category === 'Dersler' ? 'book' : 'document-text'} 
+                    size={20} 
+                    color={Colors.accentGradient[0]} 
+                  />
+                  <Text style={styles.semesterTitle}>{category}</Text>
+                  <Text style={styles.semesterCount}>({items.length})</Text>
                 </View>
                 
-                {courses.map((course) => (
-                  <CourseCard key={course.id} course={course} />
-                ))}
+                {category === 'Dersler' ? (
+                  items.map((item) => (
+                    <CourseCard key={item.id} course={item as Course} />
+                  ))
+                ) : (
+                  items.map((item) => (
+                    <NoteCard key={item.id} note={item as Note} />
+                  ))
+                )}
               </View>
             ))
           )}

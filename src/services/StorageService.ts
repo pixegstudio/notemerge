@@ -1,11 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Course, Note } from '../types';
+import PremiumService from './PremiumService';
+import FirestoreService from './FirestoreService';
 
 const STORAGE_KEYS = {
   COURSES: '@notemerge_courses',
   NOTES: '@notemerge_notes',
   ONBOARDING_COMPLETED: '@notemerge_onboarding_completed',
-  PREMIUM_STATUS: '@notemerge_premium_status',
+  PREMIUM_STATUS: '@notemerge_premium_status', // DEPRECATED: Now using Firebase
   CUSTOM_TAGS: '@notemerge_custom_tags',
 } as const;
 
@@ -19,13 +21,26 @@ export class StorageService {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.COURSES);
       if (!data) return [];
       
-      const courses = JSON.parse(data);
-      // Convert date strings back to Date objects
-      return courses.map((course: any) => ({
-        ...course,
-        createdAt: new Date(course.createdAt),
-        updatedAt: new Date(course.updatedAt),
-      }));
+      // SECURITY FIX: Validate JSON before parsing
+      try {
+        const courses = JSON.parse(data);
+        
+        // Validate that it's an array
+        if (!Array.isArray(courses)) {
+          console.error('Invalid courses data: not an array');
+          return [];
+        }
+        
+        // Convert date strings back to Date objects
+        return courses.map((course: any) => ({
+          ...course,
+          createdAt: new Date(course.createdAt),
+          updatedAt: new Date(course.updatedAt),
+        }));
+      } catch (parseError) {
+        console.error('JSON parse error in getCourses:', parseError);
+        return [];
+      }
     } catch (error) {
       console.error('Error loading courses:', error);
       return [];
@@ -89,7 +104,23 @@ export class StorageService {
   static async getNotes(): Promise<Note[]> {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.NOTES);
-      return data ? JSON.parse(data) : [];
+      if (!data) return [];
+      
+      // SECURITY FIX: Validate JSON before parsing
+      try {
+        const notes = JSON.parse(data);
+        
+        // Validate that it's an array
+        if (!Array.isArray(notes)) {
+          console.error('Invalid notes data: not an array');
+          return [];
+        }
+        
+        return notes;
+      } catch (parseError) {
+        console.error('JSON parse error in getNotes:', parseError);
+        return [];
+      }
     } catch (error) {
       console.error('Error loading notes:', error);
       return [];
@@ -172,7 +203,16 @@ export class StorageService {
   static async hasCompletedOnboarding(): Promise<boolean> {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
-      return data ? JSON.parse(data) : false;
+      if (!data) return false;
+      
+      // SECURITY FIX: Validate JSON before parsing
+      try {
+        const completed = JSON.parse(data);
+        return Boolean(completed);
+      } catch (parseError) {
+        console.error('JSON parse error in hasCompletedOnboarding:', parseError);
+        return false;
+      }
     } catch (error) {
       console.error('Error loading onboarding status:', error);
       return false;
@@ -180,23 +220,27 @@ export class StorageService {
   }
 
   // ============================================================
-  // PREMIUM
+  // PREMIUM - NOW USING FIREBASE (SECURITY FIX)
   // ============================================================
   
+  /**
+   * @deprecated Use PremiumService.updatePremiumStatus() instead
+   * This method is kept for backward compatibility during migration
+   */
   static async setPremiumStatus(isPremium: boolean): Promise<void> {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.PREMIUM_STATUS, JSON.stringify(isPremium));
-    } catch (error) {
-      console.error('Error saving premium status:', error);
-    }
+    console.warn('⚠️ setPremiumStatus is deprecated. Premium status is now managed by Firebase.');
+    // No longer write to AsyncStorage
   }
 
+  /**
+   * Get premium status from Firebase (SECURITY FIX)
+   * This now fetches from backend instead of local storage
+   */
   static async getPremiumStatus(): Promise<boolean> {
     try {
-      const data = await AsyncStorage.getItem(STORAGE_KEYS.PREMIUM_STATUS);
-      return data ? JSON.parse(data) : false;
+      return await PremiumService.isPremium();
     } catch (error) {
-      console.error('Error loading premium status:', error);
+      console.error('Error loading premium status from Firebase:', error);
       return false;
     }
   }
@@ -208,7 +252,23 @@ export class StorageService {
   static async getCustomTags(): Promise<any[]> {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_TAGS);
-      return data ? JSON.parse(data) : [];
+      if (!data) return [];
+      
+      // SECURITY FIX: Validate JSON before parsing
+      try {
+        const tags = JSON.parse(data);
+        
+        // Validate that it's an array
+        if (!Array.isArray(tags)) {
+          console.error('Invalid tags data: not an array');
+          return [];
+        }
+        
+        return tags;
+      } catch (parseError) {
+        console.error('JSON parse error in getCustomTags:', parseError);
+        return [];
+      }
     } catch (error) {
       console.error('Error loading custom tags:', error);
       return [];
@@ -416,23 +476,62 @@ export class StorageService {
 
   static async importBackup(jsonData: string): Promise<{ success: boolean; message: string }> {
     try {
-      const backupData = JSON.parse(jsonData);
+      // SECURITY FIX: Validate JSON before parsing
+      let backupData;
+      try {
+        backupData = JSON.parse(jsonData);
+      } catch (parseError) {
+        console.error('JSON parse error in importBackup:', parseError);
+        return {
+          success: false,
+          message: 'Geçersiz JSON formatı',
+        };
+      }
 
       // Validate backup structure
-      if (!backupData.version || !backupData.data) {
+      if (!backupData || typeof backupData !== 'object') {
         return {
           success: false,
           message: 'Geçersiz yedekleme dosyası',
         };
       }
 
+      if (!backupData.version || !backupData.data) {
+        return {
+          success: false,
+          message: 'Geçersiz yedekleme dosyası yapısı',
+        };
+      }
+
       const { courses, notes, customTags, premiumStatus, theme } = backupData.data;
+
+      // Validate data types
+      if (courses && !Array.isArray(courses)) {
+        return {
+          success: false,
+          message: 'Geçersiz ders verisi',
+        };
+      }
+
+      if (notes && !Array.isArray(notes)) {
+        return {
+          success: false,
+          message: 'Geçersiz not verisi',
+        };
+      }
+
+      if (customTags && !Array.isArray(customTags)) {
+        return {
+          success: false,
+          message: 'Geçersiz etiket verisi',
+        };
+      }
 
       // Restore data
       if (courses) await this.saveCourses(courses);
       if (notes) await this.saveNotes(notes);
       if (customTags) await this.saveCustomTags(customTags);
-      if (premiumStatus !== undefined) await this.setPremiumStatus(premiumStatus);
+      // Note: premiumStatus is now managed by Firebase, so we skip it
       if (theme) await AsyncStorage.setItem('@notemerge_theme', theme);
 
       return {
@@ -445,6 +544,34 @@ export class StorageService {
         success: false,
         message: 'Yedekleme geri yüklenirken hata oluştu',
       };
+    }
+  }
+
+  // ============================================================
+  // NOTIFICATION IDS
+  // ============================================================
+  static async saveNotificationId(key: string, notificationId: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(`@notification_${key}`, notificationId);
+    } catch (error) {
+      console.error('Error saving notification ID:', error);
+    }
+  }
+
+  static async getNotificationId(key: string): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(`@notification_${key}`);
+    } catch (error) {
+      console.error('Error getting notification ID:', error);
+      return null;
+    }
+  }
+
+  static async removeNotificationId(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(`@notification_${key}`);
+    } catch (error) {
+      console.error('Error removing notification ID:', error);
     }
   }
 }

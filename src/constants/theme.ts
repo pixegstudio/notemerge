@@ -2,7 +2,7 @@
 
 export type ThemeMode = 'night' | 'day';
 
-// Course Colors - Updated for better contrast in dark mode
+// Course Colors - Pastel palette with warm tones
 const CourseColors = [
   {
     id: 'blue',
@@ -10,13 +10,6 @@ const CourseColors = [
     gradient: ['#5A7FE8', '#7B9BF0'],
     iconName: 'calculator',
     subject: 'Matematik',
-  },
-  {
-    id: 'cyan',
-    name: 'Turkuaz',
-    gradient: ['#4ECDC4', '#6FE0D8'],
-    iconName: 'flash',
-    subject: 'Fizik',
   },
   {
     id: 'purple',
@@ -33,9 +26,9 @@ const CourseColors = [
     subject: 'Biyoloji',
   },
   {
-    id: 'orange',
-    name: 'Turuncu',
-    gradient: ['#E8A87C', '#F0BA8E'],
+    id: 'peach',
+    name: 'Şeftali',
+    gradient: ['#F5B895', '#F8C9A8'],
     iconName: 'time',
     subject: 'Tarih',
   },
@@ -47,13 +40,6 @@ const CourseColors = [
     subject: 'Edebiyat',
   },
   {
-    id: 'teal',
-    name: 'Deniz Mavisi',
-    gradient: ['#4DB8A8', '#6FCABA'],
-    iconName: 'globe',
-    subject: 'Coğrafya',
-  },
-  {
     id: 'lavender',
     name: 'Lavanta',
     gradient: ['#A88BE8', '#BA9DF0'],
@@ -63,16 +49,30 @@ const CourseColors = [
   {
     id: 'coral',
     name: 'Mercan',
-    gradient: ['#E87D7D', '#F08F8F'],
+    gradient: ['#F5A3A3', '#F8B5B5'],
     iconName: 'musical-notes',
     subject: 'Müzik',
   },
   {
-    id: 'indigo',
-    name: 'İndigo',
-    gradient: ['#6C8EEF', '#7EA0F7'],
+    id: 'sage',
+    name: 'Adaçayı',
+    gradient: ['#A8C5A8', '#BAD4BA'],
+    iconName: 'globe',
+    subject: 'Coğrafya',
+  },
+  {
+    id: 'gray',
+    name: 'Gri',
+    gradient: ['#9BA5B0', '#ADB7C2'],
     iconName: 'desktop',
     subject: 'Bilgisayar',
+  },
+  {
+    id: 'lilac',
+    name: 'Leylak',
+    gradient: ['#C5A8E8', '#D4BAF0'],
+    iconName: 'school',
+    subject: 'Felsefe',
   },
 ] as const;
 
@@ -199,5 +199,6 @@ export const DayTheme: Theme = {
   tagColors: TagColors,
 };
 
+export { CourseColors, TagColors };
 export type CourseColorType = typeof CourseColors[number];
 export type TagColorType = typeof TagColors[number];

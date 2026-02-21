@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteMerge - Test Checklist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #4ECDC4;
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .section-icon {
+            font-size: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+            flex: 1;
+        }
+
+        .section-progress {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 600;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checklist-item:hover {
+            background: #f8f9fa;
+        }
+
+        .checklist-item.completed {
+            background: #d4edda;
+            opacity: 0.7;
+        }
+
+        .checklist-item.completed:hover {
+            opacity: 1;
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .checklist-item.completed .checkbox {
+            background: #4ECDC4;
+            border-color: #4ECDC4;
+        }
+
+        .checkmark {
+            display: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .checklist-item.completed .checkmark {
+            display: block;
+        }
+
+        .checklist-text {
+            flex: 1;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
+        .checklist-item.completed .checklist-text {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .sub-item {
+            margin-left: 36px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .critical-section {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .critical-section .section-title {
+            color: #856404;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-reset {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #c0392b;
+        }
+
+        .btn-export {
+            background: #4ECDC4;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #3db8af;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-new {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-critical {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                flex-wrap: wrap;
+            }
+
+            .stat {
+                flex: 1 1 50%;
+                margin-bottom: 15px;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 NoteMerge Test Checklist</h1>
+            <p>iOS Simulator & Device Testing</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="completedCount">0</div>
+                <div class="stat-label">Tamamlanan</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Toplam Test</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="progressPercent">0%</div>
+                <div class="stat-label">İlerleme</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Section 1: Ders Oluşturma -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">📚</span>
+                    <h2 class="section-title">1. Ders Oluşturma & Yönetimi</h2>
+                    <span class="section-progress" data-section="1">0/7</span>
+                </div>
+                <div class="checklist-item" data-id="1.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ana ekranda "+" ile yeni ders oluştur</div>
+                </div>
+                <div class="checklist-item" data-id="1.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">İkon seçimi: 5 sütunlu grid responsive mi? İkonlar tam ortada mı?</div>
+                </div>
+                <div class="checklist-item" data-id="1.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Renk seçimi çalışıyor mu? <span class="badge badge-new">YENİ</span></div>
+                </div>
+                <div class="checklist-item" data-id="1.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ders adı Türkçe karakter destekliyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="1.5">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Oluşturulan ders ana ekranda görünüyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="1.6">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ders kartına uzun bas → "Dersi Düzenle" çalışıyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="1.7">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ders silme çalışıyor mu?</div>
+                </div>
+            </div>
+
+            <!-- Section 2: Not Ekleme -->
+            <div class="section critical-section">
+                <div class="section-header">
+                    <span class="section-icon">📝</span>
+                    <h2 class="section-title">2. Not Ekleme <span class="badge badge-critical">KRİTİK</span></h2>
+                    <span class="section-progress" data-section="2">0/8</span>
+                </div>
+                <div class="checklist-item" data-id="2.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ders içinde "+" → Galeriden Seç</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="2.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Tek görsel ekle</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="2.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Çoklu görsel ekle (max 10)</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="2.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Console'da <code>✅ Image copied to permanent location</code> görünüyor mu? <span class="badge badge-new">YENİ FİX</span></div>
+                </div>
+                <div class="checklist-item" data-id="2.5">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ders içinde "+" → Kameradan Tara</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="2.6">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Fotoğraf çek ve kaydet</div>
+                </div>
+                <div class="checklist-item" data-id="2.7">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ders içinde "+" → Dosyadan İçe Aktar</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="2.8">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">PDF ekle ve kalıcı yere kopyalandığını doğrula</div>
+                </div>
+            </div>
+
+            <!-- Section 3: Not Görüntüleme -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">👁️</span>
+                    <h2 class="section-title">3. Not Görüntüleme</h2>
+                    <span class="section-progress" data-section="3">0/5</span>
+                </div>
+                <div class="checklist-item" data-id="3.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Grid view: Thumbnail'ler 1:1 kare mi? Ortalanmış mı?</div>
+                </div>
+                <div class="checklist-item" data-id="3.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">List view: Not bilgileri doğru görünüyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="3.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Not kartına tıkla → Detay ekranı açılıyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="3.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">PDF notlar "PDF" badge'i gösteriyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="3.5">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Görsel notlar thumbnail gösteriyor mu?</div>
+                </div>
+            </div>
+
+            <!-- Section 4: Ders Paylaşma -->
+            <div class="section critical-section">
+                <div class="section-header">
+                    <span class="section-icon">📤</span>
+                    <h2 class="section-title">4. Ders Paylaşma <span class="badge badge-new">BUGÜN EKLENDİ</span></h2>
+                    <span class="section-progress" data-section="4">0/8</span>
+                </div>
+                <div class="checklist-item" data-id="4.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ders detayda 3 nokta → "Bu Dersi Paylaş"</div>
+                </div>
+                <div class="checklist-item" data-id="4.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">İki seçenek görünüyor mu? (PDF / JSON)</div>
+                </div>
+                <div class="checklist-item" data-id="4.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">PDF Olarak: Loading indicator görünüyor mu?</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="4.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Console: <code>✅ Valid pages</code> mesajı var mı?</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="4.5">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Share sheet açılıyor mu? (AirDrop, Mail, Messages)</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="4.6">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Free user: Watermark var mı?</div>
+                </div>
+                <div class="checklist-item" data-id="4.7">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">JSON Olarak: .json dosyası oluşuyor mu?</div>
+                </div>
+                <div class="checklist-item sub-item" data-id="4.8">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Share sheet açılıyor mu?</div>
+                </div>
+            </div>
+
+            <!-- Section 5: PDF Export -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">📄</span>
+                    <h2 class="section-title">5. PDF Export (Tek Not)</h2>
+                    <span class="section-progress" data-section="5">0/4</span>
+                </div>
+                <div class="checklist-item" data-id="5.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Not menüsünden "PDF Olarak Paylaş"</div>
+                </div>
+                <div class="checklist-item" data-id="5.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Tüm sayfalar PDF'te mi?</div>
+                </div>
+                <div class="checklist-item" data-id="5.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Free user: Her sayfada watermark var mı?</div>
+                </div>
+                <div class="checklist-item" data-id="5.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Premium user: Watermark yok mu?</div>
+                </div>
+            </div>
+
+            <!-- Section 6: Not Birleştirme -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">🔗</span>
+                    <h2 class="section-title">6. Not Birleştirme (Merge)</h2>
+                    <span class="section-progress" data-section="6">0/5</span>
+                </div>
+                <div class="checklist-item" data-id="6.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Header'daki "Merge Notes to PDF" butonuna bas</div>
+                </div>
+                <div class="checklist-item" data-id="6.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Selection mode aktif oluyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="6.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">2+ not seç ve "Merge" butonuna bas</div>
+                </div>
+                <div class="checklist-item" data-id="6.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Birleştirilmiş not oluşuyor mu? "Merged" tag'i var mı?</div>
+                </div>
+                <div class="checklist-item" data-id="6.5">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">İsim kısaltılmış mı? (örn: "Not 1 + 2 more")</div>
+                </div>
+            </div>
+
+            <!-- Section 7: Toplu İşlemler -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">⚡</span>
+                    <h2 class="section-title">7. Toplu İşlemler (Bulk Operations)</h2>
+                    <span class="section-progress" data-section="7">0/5</span>
+                </div>
+                <div class="checklist-item" data-id="7.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Selection mode'da "More" butonuna bas</div>
+                </div>
+                <div class="checklist-item" data-id="7.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">3 seçenek görünüyor mu? (Arşivle, Sil, Etiket Ekle)</div>
+                </div>
+                <div class="checklist-item" data-id="7.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Arşivle: Seçili notları sil</div>
+                </div>
+                <div class="checklist-item" data-id="7.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Sil: Kalıcı olarak sil (confirmation alert var mı?)</div>
+                </div>
+                <div class="checklist-item" data-id="7.5">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Etiket Ekle: Tag ekleme çalışıyor mu?</div>
+                </div>
+            </div>
+
+            <!-- Section 8: Etiketler -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">🏷️</span>
+                    <h2 class="section-title">8. Etiketler (Tags)</h2>
+                    <span class="section-progress" data-section="8">0/5</span>
+                </div>
+                <div class="checklist-item" data-id="8.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Not menüsünden "Etiket Ekle"</div>
+                </div>
+                <div class="checklist-item" data-id="8.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Predefined tag'ler görünüyor mu? (Vize, Final, Ödev, Quiz)</div>
+                </div>
+                <div class="checklist-item" data-id="8.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Custom tag oluştur</div>
+                </div>
+                <div class="checklist-item" data-id="8.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Tag filtreleme çalışıyor mu? (Üstteki tag butonları)</div>
+                </div>
+                <div class="checklist-item" data-id="8.5">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">"Tümü" butonu filtreyi kaldırıyor mu?</div>
+                </div>
+            </div>
+
+            <!-- Section 9: İstatistikler -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">📊</span>
+                    <h2 class="section-title">9. İstatistikler (Statistics Carousel)</h2>
+                    <span class="section-progress" data-section="9">0/4</span>
+                </div>
+                <div class="checklist-item" data-id="9.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Ana ekranda 5 kart var mı? (Most Active, Courses, Notes, Pages, Size)</div>
+                </div>
+                <div class="checklist-item" data-id="9.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Horizontal scroll çalışıyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="9.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Son kart kısmen görünüyor mu? (carousel efekti)</div>
+                </div>
+                <div class="checklist-item" data-id="9.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Kartlar eşit genişlikte mi?</div>
+                </div>
+            </div>
+
+            <!-- Section 10: Firebase & Premium -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">🔥</span>
+                    <h2 class="section-title">10. Firebase & Premium</h2>
+                    <span class="section-progress" data-section="10">0/4</span>
+                </div>
+                <div class="checklist-item" data-id="10.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">App açılışta Firebase auth çalışıyor mu? (Console: <code>✅ Anonymous sign-in successful</code>)</div>
+                </div>
+                <div class="checklist-item" data-id="10.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Premium ekranına git</div>
+                </div>
+                <div class="checklist-item" data-id="10.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">"Restore Purchases" butonu çalışıyor mu?</div>
+                </div>
+                <div class="checklist-item" data-id="10.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Premium özellikleri listeleniyor mu?</div>
+                </div>
+            </div>
+
+            <!-- Critical Scenarios -->
+            <div class="section critical-section">
+                <div class="section-header">
+                    <span class="section-icon">🔥</span>
+                    <h2 class="section-title">Kritik End-to-End Senaryolar</h2>
+                    <span class="section-progress" data-section="11">0/3</span>
+                </div>
+                
+                <h3 style="margin: 20px 0 10px 0; color: #856404; font-size: 16px;">Senaryo 1: Yeni Not Ekle → Paylaş</h3>
+                <div class="checklist-item" data-id="11.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Felsefe dersini aç → "+" → Galeriden 3-4 görsel ekle → Console'da permanent location mesajı gör → 3 nokta → "Bu Dersi Paylaş" → "PDF Olarak" → PDF oluşuyor ve share sheet açılıyor</div>
+                </div>
+
+                <h3 style="margin: 20px 0 10px 0; color: #856404; font-size: 16px;">Senaryo 2: App Yeniden Yükle → Görseller Kaybolmasın</h3>
+                <div class="checklist-item" data-id="11.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Yeni not ekle → App'i kapat (Cmd+Q) → App'i tekrar aç → Felsefe dersini aç → Not hala görünüyor mu? Thumbnail'ler yükleniyor mu?</div>
+                </div>
+
+                <h3 style="margin: 20px 0 10px 0; color: #856404; font-size: 16px;">Senaryo 3: Merge → Export → Paylaş</h3>
+                <div class="checklist-item" data-id="11.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">2-3 not seç → "Merge" → Merged note oluştu mu? (isim kısa mı?) → PDF olarak paylaş → Tüm sayfalar PDF'te mi?</div>
+                </div>
+            </div>
+
+            <!-- Device Testing -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">📱</span>
+                    <h2 class="section-title">Gerçek Cihazda Test (Opsiyonel)</h2>
+                    <span class="section-progress" data-section="12">0/4</span>
+                </div>
+                <div class="checklist-item" data-id="12.1">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">AirDrop ile ders paylaş (sadece gerçek cihazda)</div>
+                </div>
+                <div class="checklist-item" data-id="12.2">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">WhatsApp ile PDF paylaş (sadece gerçek cihazda)</div>
+                </div>
+                <div class="checklist-item" data-id="12.3">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Mail ile JSON export (sadece gerçek cihazda)</div>
+                </div>
+                <div class="checklist-item" data-id="12.4">
+                    <div class="checkbox"><span class="checkmark">✓</span></div>
+                    <div class="checklist-text">Kamera ile not oluştur (gerçek fotoğraf)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-reset" onclick="resetAll()">🔄 Tümünü Sıfırla</button>
+            <button class="btn btn-export" onclick="exportResults()">💾 Sonuçları Kaydet</button>
+        </div>
+    </div>
+
+    <script>
+        // Load saved state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('notemerge-test-state');
+            if (saved) {
+                const state = JSON.parse(saved);
+                state.forEach(id => {
+                    const item = document.querySelector(`[data-id="${id}"]`);
+                    if (item) {
+                        item.classList.add('completed');
+                    }
+                });
+            }
+            updateStats();
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            const completed = Array.from(document.querySelectorAll('.checklist-item.completed'))
+                .map(item => item.getAttribute('data-id'));
+            localStorage.setItem('notemerge-test-state', JSON.stringify(completed));
+        }
+
+        // Toggle checkbox
+        document.querySelectorAll('.checklist-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.classList.toggle('completed');
+                saveState();
+                updateStats();
+            });
+        });
+
+        // Update statistics
+        function updateStats() {
+            const total = document.querySelectorAll('.checklist-item').length;
+            const completed = document.querySelectorAll('.checklist-item.completed').length;
+            const percent = Math.round((completed / total) * 100);
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressBar').style.width = percent + '%';
+
+            // Update section progress
+            for (let i = 1; i <= 12; i++) {
+                const sectionItems = document.querySelectorAll(`[data-id^="${i}."]`);
+                const sectionCompleted = Array.from(sectionItems).filter(item => 
+                    item.classList.contains('completed')
+                ).length;
+                const progressEl = document.querySelector(`[data-section="${i}"]`);
+                if (progressEl) {
+                    progressEl.textContent = `${sectionCompleted}/${sectionItems.length}`;
+                }
+            }
+        }
+
+        // Reset all
+        function resetAll() {
+            if (confirm('Tüm test sonuçlarını sıfırlamak istediğinden emin misin?')) {
+                document.querySelectorAll('.checklist-item').forEach(item => {
+                    item.classList.remove('completed');
+                });
+                localStorage.removeItem('notemerge-test-state');
+                updateStats();
+            }
+        }
+
+        // Export results
+        function exportResults() {
+            const total = document.querySelectorAll('.checklist-item').length;
+            const completed = document.querySelectorAll('.checklist-item.completed').length;
+            const percent = Math.round((completed / total) * 100);
+            
+            const completedItems = Array.from(document.querySelectorAll('.checklist-item.completed'))
+                .map(item => item.querySelector('.checklist-text').textContent.trim());
+            
+            const failedItems = Array.from(document.querySelectorAll('.checklist-item:not(.completed)'))
+                .map(item => item.querySelector('.checklist-text').textContent.trim());
+
+            const report = `# NoteMerge Test Raporu
+Tarih: ${new Date().toLocaleString('tr-TR')}
+
+## Özet
+- Toplam Test: ${total}
+- Başarılı: ${completed}
+- Başarısız: ${total - completed}
+- İlerleme: ${percent}%
+
+## Başarılı Testler (${completed})
+${completedItems.map((item, i) => `${i + 1}. ✅ ${item}`).join('\n')}
+
+## Başarısız/Tamamlanmamış Testler (${total - completed})
+${failedItems.map((item, i) => `${i + 1}. ❌ ${item}`).join('\n')}
+
+---
+Generated by NoteMerge Test Checklist
+`;
+
+            // Download as text file
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `notemerge-test-report-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert('Test raporu indirildi! 📊');
+        }
+
+        // Initialize
+        loadState();
+    </script>
+</body>
+</html>

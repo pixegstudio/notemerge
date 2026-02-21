@@ -67,7 +67,7 @@ export const RenameNoteModal: React.FC<RenameNoteModalProps> = ({
     modal: {
       backgroundColor: theme.colors.card.background,
       borderRadius: BorderRadius['2xl'],
-      padding: Spacing.xl,
+      padding: Spacing.base,
       width: '100%',
       maxWidth: 400,
       shadowColor: '#000',
@@ -77,24 +77,27 @@ export const RenameNoteModal: React.FC<RenameNoteModalProps> = ({
       elevation: 8,
     },
     title: {
-      fontSize: Typography.headline.fontSize,
-      fontFamily: Typography.headline.fontFamily,
+      fontSize: Typography.title3.fontSize,
+      fontFamily: Typography.title3.fontFamily,
       fontWeight: '700',
       color: theme.colors.text.primary,
-      marginBottom: Spacing.lg,
+      marginBottom: Spacing.md,
+      marginTop: Spacing.sm,
       textAlign: 'center',
+      lineHeight: Typography.title3.fontSize * 1.2,
     },
     input: {
       backgroundColor: theme.colors.background,
       borderRadius: BorderRadius.lg,
       paddingHorizontal: Spacing.base,
-      paddingVertical: Spacing.md,
+      paddingVertical: Spacing.sm,
       fontSize: Typography.body.fontSize,
       fontFamily: Typography.body.fontFamily,
       color: theme.colors.text.primary,
-      marginBottom: Spacing.lg,
+      marginBottom: Spacing.md,
       borderWidth: 1,
       borderColor: theme.colors.card.border,
+      lineHeight: Typography.body.fontSize * 1.3,
     },
     actions: {
       flexDirection: 'row',
@@ -109,24 +112,26 @@ export const RenameNoteModal: React.FC<RenameNoteModalProps> = ({
       backgroundColor: theme.colors.card.background,
       borderWidth: 1,
       borderColor: theme.colors.card.border,
-      paddingVertical: Spacing.md,
+      paddingVertical: Spacing.sm,
       alignItems: 'center',
     },
     buttonGradient: {
-      paddingVertical: Spacing.md,
+      paddingVertical: Spacing.sm,
       alignItems: 'center',
     },
     buttonTextCancel: {
-      fontSize: Typography.body.fontSize,
-      fontFamily: Typography.body.fontFamily,
+      fontSize: Typography.callout.fontSize,
+      fontFamily: Typography.callout.fontFamily,
       fontWeight: '600',
       color: theme.colors.text.secondary,
+      lineHeight: Typography.callout.fontSize * 1.2,
     },
     buttonTextSave: {
-      fontSize: Typography.body.fontSize,
-      fontFamily: Typography.body.fontFamily,
+      fontSize: Typography.callout.fontSize,
+      fontFamily: Typography.callout.fontFamily,
       fontWeight: '600',
       color: theme.colors.text.inverse,
+      lineHeight: Typography.callout.fontSize * 1.2,
     },
   });
 
@@ -143,7 +148,7 @@ export const RenameNoteModal: React.FC<RenameNoteModalProps> = ({
       >
         <View style={styles.modalContainer}>
           <View style={styles.modal}>
-            <Text style={styles.title}>Notu Yeniden Adlandır</Text>
+            <Text style={styles.title}>Benim Notum</Text>
             
             <TextInput
               ref={inputRef}

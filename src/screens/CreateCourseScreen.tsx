@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -19,6 +20,20 @@ import { Typography } from '../constants/typography';
 import { useTheme } from '../context/ThemeContext';
 import { StorageService } from '../services/StorageService';
 import { Course } from '../types';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// Icon grid layout
+const ICON_COLUMNS = 5;
+const ICON_GAP = Spacing.xs;
+const ICON_PADDING = Spacing.base * 2; // section padding
+const ICON_SIZE = (SCREEN_WIDTH - ICON_PADDING - (ICON_GAP * (ICON_COLUMNS - 1))) / ICON_COLUMNS;
+
+// Color grid layout
+const COLOR_COLUMNS = 5;
+const COLOR_GAP = Spacing.sm;
+const COLOR_PADDING = Spacing.base * 2; // section padding
+const COLOR_SIZE = (SCREEN_WIDTH - COLOR_PADDING - (COLOR_GAP * (COLOR_COLUMNS - 1))) / COLOR_COLUMNS;
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
@@ -132,15 +147,17 @@ const createStyles = (theme: any) => StyleSheet.create({
   colorGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.base,
+    gap: COLOR_GAP,
   },
   colorItem: {
+    width: COLOR_SIZE,
     alignItems: 'center',
     gap: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   colorCircle: {
-    width: 56,
-    height: 56,
+    width: COLOR_SIZE - 8,
+    height: COLOR_SIZE - 8,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -156,11 +173,11 @@ const createStyles = (theme: any) => StyleSheet.create({
   iconGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.md,
+    gap: ICON_GAP,
   },
   iconItem: {
-    width: 56,
-    height: 56,
+    width: ICON_SIZE,
+    height: ICON_SIZE,
     borderRadius: BorderRadius.lg,
     backgroundColor: theme.colors.card.background,
     alignItems: 'center',
@@ -244,8 +261,26 @@ export const CreateCourseScreen = ({ navigation, route }: any) => {
   };
 
   const popularIcons = [
-    'book', 'calculator', 'flash', 'flask', 'scale', 'time',
-    'document-text', 'globe', 'color-palette', 'musical-notes', 'desktop', 'leaf'
+    // Temel Eğitim
+    'book', 'book-outline', 'library', 'reader', 'newspaper',
+    // Matematik & Fen
+    'calculator', 'calculator-outline', 'flask', 'flask-outline', 'beaker',
+    // Fizik & Kimya
+    'flash', 'flash-outline', 'magnet', 'nuclear', 'planet',
+    // Sosyal Bilimler
+    'globe', 'globe-outline', 'map', 'compass', 'earth',
+    // Dil & Edebiyat
+    'language', 'chatbubbles', 'text', 'create', 'pencil',
+    // Sanat & Müzik
+    'musical-notes', 'musical-note', 'color-palette', 'brush', 'camera',
+    // Teknoloji
+    'desktop', 'laptop', 'code-slash', 'hardware-chip', 'terminal',
+    // Biyoloji & Sağlık
+    'leaf', 'flower', 'heart', 'fitness', 'medkit',
+    // Tarih & Coğrafya
+    'time', 'hourglass', 'flag', 'location', 'navigate',
+    // Diğer
+    'school', 'trophy', 'ribbon', 'star', 'bulb'
   ];
 
   return (

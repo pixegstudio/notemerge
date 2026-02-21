@@ -1,23 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Text, TextInput, StatusBar, Platform } from 'react-native';
+import { StatusBar, Platform } from 'react-native';
 import * as SplashScreenExpo from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
-import { useFonts, Inter_300Light, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { SplashScreen } from './src/components/SplashScreen';
+import AuthService from './src/services/AuthService';
 
-// Set default font family for all Text components
-if (Text.defaultProps == null) {
-  Text.defaultProps = {};
-}
-Text.defaultProps.style = { fontFamily: 'Inter_400Regular' };
-
-if (TextInput.defaultProps == null) {
-  TextInput.defaultProps = {};
-}
-TextInput.defaultProps.style = { fontFamily: 'Inter_400Regular' };
+// San Francisco (SF Pro) is the default iOS system font
+// React Native automatically uses it, no need to load custom fonts
 
 // Keep the splash screen visible while we fetch resources
 SplashScreenExpo.preventAutoHideAsync();
@@ -58,24 +50,24 @@ const StatusBarManager = () => {
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
-  
-  const [fontsLoaded] = useFonts({
-    Inter_300Light,
-    Inter_400Regular,
-    Inter_600SemiBold,
-    Inter_700Bold,
-  });
 
   useEffect(() => {
     async function prepare() {
       try {
-        // Wait for fonts to load
-        if (!fontsLoaded) return;
+        console.log('🚀 Initializing Firebase...');
+        
+        // Initialize Firebase Authentication
+        await AuthService.signInAnonymously();
+        console.log('✅ Firebase Authentication initialized');
+        
+        // Wait for auth to be ready
+        await AuthService.waitForAuth();
+        console.log('✅ User authenticated:', AuthService.getCurrentUserId());
         
         // Simulate loading (you can add actual resource loading here)
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (e) {
-        console.warn(e);
+        console.error('❌ Firebase initialization error:', e);
       } finally {
         setAppIsReady(true);
         await SplashScreenExpo.hideAsync();
@@ -83,7 +75,7 @@ export default function App() {
     }
 
     prepare();
-  }, [fontsLoaded]);
+  }, []);
 
   if (!appIsReady) {
     return <SplashScreen />;

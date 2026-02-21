@@ -76,16 +76,19 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: Spacing.base,
+    justifyContent: 'center',
+    gap: Spacing.sm,
     marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.base,
   },
   statCard: {
-    paddingHorizontal: Spacing.xl,
+    flex: 1,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     alignItems: 'center',
-    minWidth: 100,
+    maxWidth: 110,
   },
   statValue: {
     fontSize: Typography.title2.fontSize,

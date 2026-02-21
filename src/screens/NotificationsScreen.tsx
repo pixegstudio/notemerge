@@ -6,6 +6,7 @@ import {
   ScrollView,
   Switch,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -17,6 +18,7 @@ import { IconButton } from '../components';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { NotificationService } from '../services/NotificationService';
 
 const NOTIFICATION_SETTINGS_KEY = '@notification_settings';
 
@@ -150,19 +152,8 @@ export const NotificationsScreen = ({ navigation }: any) => {
     }
   };
 
-  const handleToggle = (key: keyof NotificationSettings) => {
+  const handleToggle = async (key: keyof NotificationSettings) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    if (key === 'pushNotifications' && !settings.pushNotifications) {
-      // Show alert about enabling notifications
-      Alert.alert(
-        'Bildirimler',
-        'Bildirimler şu anda devre dışı. Ayarlar > Bildirimler\'den NoteMerge için bildirimleri açabilirsiniz.',
-        [
-          { text: 'Tamam', style: 'default' },
-        ]
-      );
-    }
     
     const newSettings = {
       ...settings,
@@ -173,6 +164,11 @@ export const NotificationsScreen = ({ navigation }: any) => {
     if (key === 'pushNotifications' && settings.pushNotifications) {
       newSettings.studyReminders = false;
       newSettings.weeklyReport = false;
+    }
+
+    // Show info for weekly report
+    if (key === 'weeklyReport' && newSettings.weeklyReport) {
+      Alert.alert('📊 Haftalık Rapor', 'Bildirimler v1.1.0\'da aktif olacak!');
     }
     
     saveSettings(newSettings);
@@ -300,6 +296,38 @@ export const NotificationsScreen = ({ navigation }: any) => {
               disabled={!settings.pushNotifications}
             />
           </View>
+
+          {/* Test Notification - Coming Soon */}
+          {settings.pushNotifications && (
+            <View style={styles.section}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  Alert.alert('🚀 Yakında', 'Bildirimler v1.1.0\'da aktif olacak!');
+                }}
+                style={[
+                  styles.settingItem,
+                  { backgroundColor: theme.colors.accentGradient[0] + '20', borderColor: theme.colors.accentGradient[0] }
+                ]}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconContainer, { backgroundColor: theme.colors.accentGradient[0] }]}>
+                    <Ionicons name="rocket" size={24} color="#FFFFFF" />
+                  </View>
+                  <View style={styles.settingText}>
+                    <Text style={[styles.settingTitle, { color: theme.colors.text.primary }]}>
+                      Test Bildirimi Gönder
+                    </Text>
+                    <Text style={[styles.settingSubtitle, { color: theme.colors.text.secondary }]}>
+                      v1.1.0'da aktif olacak
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.accentGradient[0]} />
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* App Updates */}
           <View style={styles.section}>

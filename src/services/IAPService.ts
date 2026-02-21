@@ -1,6 +1,7 @@
 // import * as RNIap from 'react-native-iap';
 import { Platform } from 'react-native';
 import { StorageService } from './StorageService';
+import PremiumService from './PremiumService';
 
 // Mock types for development (Expo Go doesn't support react-native-iap)
 type Purchase = any;
@@ -9,8 +10,8 @@ type Subscription = any;
 // Product IDs
 const PRODUCT_IDS = Platform.select({
   ios: [
-    'notemerge_monthly',
-    'notemerge_yearly',
+    'com.notemerge.app.premium.monthly',
+    'com.notemerge.app.premium.yearly',
   ],
   android: [
     'notemerge_monthly',
@@ -31,7 +32,7 @@ export interface SubscriptionProduct {
 class IAPServiceClass {
   private isInitialized = false;
   private products: Subscription[] = [];
-  private isMockMode = true; // Set to false when using development build
+  private isMockMode = false; // Set to false when using development build
 
   /**
    * Initialize IAP connection
@@ -71,7 +72,7 @@ class IAPServiceClass {
         // Mock products for Expo Go testing
         return [
           {
-            productId: 'notemerge_monthly',
+            productId: 'com.notemerge.app.premium.monthly',
             title: 'NoteMerge Premium Monthly',
             description: 'Sınırsız ders, not ve özel etiket',
             price: '49',
@@ -80,11 +81,11 @@ class IAPServiceClass {
             type: 'monthly',
           },
           {
-            productId: 'notemerge_yearly',
+            productId: 'com.notemerge.app.premium.yearly',
             title: 'NoteMerge Premium Yearly',
             description: 'Yıllık abonelik - %40 indirim',
-            price: '349',
-            localizedPrice: '₺349',
+            price: '349.99',
+            localizedPrice: '₺349,99',
             currency: 'TRY',
             type: 'yearly',
           },
@@ -124,7 +125,15 @@ class IAPServiceClass {
         // Mock purchase for Expo Go testing
         console.log('Mock purchase:', productId);
         await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
-        await StorageService.setPremiumStatus(true);
+        
+        // SECURITY FIX: Use Firebase PremiumService instead of local storage
+        await PremiumService.updatePremiumStatus({
+          isPremium: true,
+          productId,
+          purchaseDate: Date.now(),
+          platform: Platform.OS as 'ios' | 'android',
+        });
+        
         return true;
       }
 
@@ -171,8 +180,10 @@ class IAPServiceClass {
         // Mock restore for Expo Go testing
         console.log('Mock restore purchases');
         await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
-        const currentStatus = await StorageService.getPremiumStatus();
-        return currentStatus; // Return current premium status
+        
+        // SECURITY FIX: Check premium status from Firebase
+        const currentStatus = await PremiumService.isPremium();
+        return currentStatus;
       }
 
       // const purchases = await RNIap.getAvailablePurchases();

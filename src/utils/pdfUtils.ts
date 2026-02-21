@@ -2,6 +2,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { PDFDocument, rgb } from 'pdf-lib';
 import { Note } from '../types';
 
 /**
@@ -14,9 +15,14 @@ export const generatePDFFromNote = async (
   watermarkIconBase64?: string
 ): Promise<string> => {
   try {
+    console.log('📄 PDF Generation Started');
+    console.log('Total pages to process:', note.pages.length);
+    
     // Convert images to base64 with quality control
     const pagesWithBase64 = await Promise.all(
-      note.pages.map(async (page) => {
+      note.pages.map(async (page, index) => {
+        console.log(`Processing page ${index + 1}/${note.pages.length}`);
+        
         try {
           // Check if image path exists
           if (!page.originalImagePath) {
@@ -66,6 +72,9 @@ export const generatePDFFromNote = async (
     );
 
     const validPages = pagesWithBase64.filter(p => p !== null);
+    
+    console.log('✅ Valid pages after processing:', validPages.length);
+    console.log('❌ Failed pages:', note.pages.length - validPages.length);
 
     if (validPages.length === 0) {
       throw new Error('No valid pages to export');
@@ -216,11 +225,13 @@ export const generatePDFFromNote = async (
     `;
 
     // Generate PDF
+    console.log('🖨️ Generating PDF with', validPages.length, 'pages');
     const { uri } = await Print.printToFileAsync({
       html: htmlContent,
       base64: false,
     });
-
+    
+    console.log('✅ PDF Generated:', uri);
     return uri;
   } catch (error) {
     console.error('Error generating PDF:', error);
@@ -289,4 +300,81 @@ export const formatFileSize = (bytes: number): string => {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+};
+
+/**
+ * Add watermark to existing PDF
+ */
+export const addWatermarkToPDF = async (
+  pdfUri: string,
+  courseName: string,
+  noteName: string,
+  isPremium: boolean = false
+): Promise<string> => {
+  try {
+    console.log('📄 Adding watermark to PDF:', pdfUri);
+
+    // If premium, return original PDF
+    if (isPremium) {
+      console.log('✅ Premium user, returning original PDF');
+      return pdfUri;
+    }
+
+    // Read the PDF file
+    const pdfBytes = await FileSystem.readAsStringAsync(pdfUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    // Load the PDF
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const pages = pdfDoc.getPages();
+    
+    console.log('📄 PDF has', pages.length, 'pages');
+
+    // Add watermark to each page
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const { width, height } = page.getSize();
+
+      // Add header text
+      page.drawText(`${courseName} - ${noteName}`, {
+        x: 50,
+        y: height - 30,
+        size: 10,
+        color: rgb(0.4, 0.4, 0.4),
+      });
+
+      // Add watermark text in center
+      page.drawText('NoteMerge', {
+        x: width / 2 - 60,
+        y: height / 2,
+        size: 40,
+        color: rgb(0.9, 0.9, 0.9),
+        opacity: 0.3,
+      });
+
+      // Add footer text
+      page.drawText(`NoteMerge ile oluşturuldu • Sayfa ${i + 1} / ${pages.length}`, {
+        x: 50,
+        y: 20,
+        size: 8,
+        color: rgb(0.6, 0.6, 0.6),
+      });
+    }
+
+    // Save the modified PDF
+    const modifiedPdfBytes = await pdfDoc.saveAsBase64();
+    const outputPath = `${FileSystem.cacheDirectory}watermarked_${Date.now()}.pdf`;
+    
+    await FileSystem.writeAsStringAsync(outputPath, modifiedPdfBytes, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    console.log('✅ Watermarked PDF saved:', outputPath);
+    return outputPath;
+  } catch (error) {
+    console.error('Error adding watermark to PDF:', error);
+    // If watermarking fails, return original PDF
+    return pdfUri;
+  }
 };

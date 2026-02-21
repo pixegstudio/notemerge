@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import Pdf from 'react-native-pdf';
 import { IconButton } from '../components';
 import { useTheme } from '../context/ThemeContext';
 import { Spacing, BorderRadius } from '../constants/spacing';
@@ -148,7 +149,7 @@ export const PDFPreviewScreen = ({ navigation, route }: any) => {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ['images'],
         quality: 1,
         allowsMultipleSelection: true,
         selectionLimit: 10,
@@ -356,11 +357,23 @@ export const PDFPreviewScreen = ({ navigation, route }: any) => {
                   </View>
                 )}
               </View>
-              <Image
-                source={{ uri: page.originalImagePath || page.processedImagePath }}
-                style={styles.pageImage}
-                resizeMode="contain"
-              />
+              {(page.originalImagePath || page.processedImagePath)?.endsWith('.pdf') ? (
+                <Pdf
+                  source={{ uri: page.originalImagePath || page.processedImagePath }}
+                  style={styles.pageImage}
+                  trustAllCerts={false}
+                  enablePaging={false}
+                  onError={(error) => {
+                    console.log('PDF render error:', error);
+                  }}
+                />
+              ) : (
+                <Image
+                  source={{ uri: page.originalImagePath || page.processedImagePath }}
+                  style={styles.pageImage}
+                  resizeMode="contain"
+                />
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>

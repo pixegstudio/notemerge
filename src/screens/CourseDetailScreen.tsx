@@ -15,6 +15,7 @@ import {
   TouchableWithoutFeedback,
   ActivityIndicator,
   Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -23,6 +24,9 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { IconButton, GlassCard, RenameNoteModal } from '../components';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { Typography } from '../constants/typography';
@@ -30,7 +34,17 @@ import { Course, Note } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { StorageService } from '../services/StorageService';
 import { PredefinedTags } from '../constants/tags';
-import { generatePDFFromNote, sharePDF } from '../utils/pdfUtils';
+import { generatePDFFromNote, sharePDF, addWatermarkToPDF } from '../utils/pdfUtils';
+import { CourseColors, CourseColorType } from '../constants/colors';
+
+// ============================================================
+// LAYOUT CONSTANTS
+// ============================================================
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const COLOR_COLUMNS = 5;
+const COLOR_GAP = 12;
+const COLOR_PADDING = 32; // modal padding
+const COLOR_SIZE = (SCREEN_WIDTH - COLOR_PADDING - (COLOR_GAP * (COLOR_COLUMNS - 1))) / COLOR_COLUMNS;
 
 // ============================================================
 // STYLES
@@ -47,8 +61,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     height: 180,
     overflow: 'visible',
     width: '100%',
-    marginTop: '10%',
-    zIndex: 10,
   },
   heroBlur: {
     flex: 1,
@@ -87,7 +99,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   statsSection: {
     paddingHorizontal: Spacing.base,
-    marginTop: Spacing.base,
+    marginTop: -Spacing.xl,
     marginBottom: Spacing.base,
   },
   statsCard: {
@@ -151,12 +163,17 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   noteThumbnail: {
     width: '100%',
-    aspectRatio: 0.7,
+    aspectRatio: 1,
     backgroundColor: theme.colors.background,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
+    overflow: 'hidden',
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
   },
   noteInfo: {
     flex: 1,
@@ -395,8 +412,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.backgroundSecondary,
   },
   actionSheet: {
-    padding: Spacing.xl,
-    paddingBottom: Spacing['2xl'],
+    padding: Spacing.base,
+    paddingBottom: Spacing.xl,
     backgroundColor: theme.colors.backgroundSecondary,
   },
   actionSheetHandle: {
@@ -405,51 +422,170 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.text.tertiary,
     borderRadius: BorderRadius.full,
     alignSelf: 'center',
-    marginBottom: Spacing.base,
+    marginBottom: Spacing.sm,
   },
   actionSheetTitle: {
-    fontSize: Typography.headline.fontSize,
-    fontWeight: Typography.headline.fontWeight,
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.title3.fontWeight,
     color: theme.colors.text.primary,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.md,
     textAlign: 'center',
+    lineHeight: Typography.title3.fontSize * 1.2,
   },
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.base,
-    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   actionIcon: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.md,
+    marginRight: Spacing.sm,
   },
   actionText: {
     flex: 1,
   },
   actionTitle: {
-    fontSize: Typography.body.fontSize,
+    fontSize: Typography.callout.fontSize,
     fontWeight: '600',
     color: theme.colors.text.primary,
-    marginBottom: 2,
+    marginBottom: 1,
+    lineHeight: Typography.callout.fontSize * 1.2,
   },
   actionSubtitle: {
-    fontSize: Typography.footnote.fontSize,
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: Typography.caption.fontSize,
+    color: 'rgba(255, 255, 255, 0.6)',
+    lineHeight: Typography.caption.fontSize * 1.3,
   },
   cancelButton: {
-    marginTop: Spacing.base,
-    paddingVertical: Spacing.base,
+    marginTop: Spacing.sm,
+    paddingVertical: Spacing.sm,
     alignItems: 'center',
   },
   cancelText: {
-    fontSize: Typography.body.fontSize,
+    fontSize: Typography.callout.fontSize,
     fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  // Selection Mode Styles
+  selectionHeader: {
+    backgroundColor: theme.colors.card.background,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.card.border + '40',
+  },
+  selectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  selectionCount: {
+    fontSize: Typography.body.fontSize,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  selectAllButton: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  selectAllText: {
+    fontSize: Typography.footnote.fontSize,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  mergeButtonContainer: {
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+  },
+  mergeButton: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  mergeButtonGradient: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+  },
+  mergeButtonText: {
+    fontSize: Typography.body.fontSize,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  checkboxContainer: {
+    position: 'absolute',
+    top: Spacing.sm,
+    left: Spacing.sm,
+    zIndex: 10,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accent,
+  },
+  colorModalContent: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: BorderRadius['2xl'],
+    padding: Spacing.base,
+    maxHeight: '80%',
+  },
+  colorModalTitle: {
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.title3.fontWeight,
+    color: theme.colors.text.primary,
+    marginBottom: Spacing.base,
+    textAlign: 'center',
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: COLOR_GAP,
+    marginBottom: Spacing.base,
+  },
+  colorItem: {
+    width: COLOR_SIZE,
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  colorCircle: {
+    width: COLOR_SIZE - 8,
+    height: COLOR_SIZE - 8,
+    borderRadius: (COLOR_SIZE - 8) / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  colorCircleSelected: {
+    borderWidth: 3,
+    borderColor: theme.colors.text.primary,
+  },
+  colorName: {
+    fontSize: Typography.caption.fontSize,
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
   },
 });
 
@@ -487,8 +623,8 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         
         // Migrate old notes with uri to originalImagePath
         let needsMigration = false;
-        const migratedNotes = notes.map(note => {
-          const migratedPages = note.pages.map(page => {
+        const migratedNotes = await Promise.all(notes.map(async (note) => {
+          const migratedPages = await Promise.all(note.pages.map(async (page) => {
             // @ts-ignore - handling legacy uri field
             if (page.uri && !page.originalImagePath) {
               needsMigration = true;
@@ -504,23 +640,72 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
                 createdAt: page.createdAt || new Date(),
               };
             }
+            
+            // Migrate images from cache to permanent storage
+            if (page.originalImagePath) {
+              const imagePath = page.originalImagePath;
+              
+              // Check if it's in cache (ImagePicker cache)
+              if (imagePath.includes('ImagePicker') || imagePath.includes('Caches')) {
+                try {
+                  // Check if file exists in cache
+                  const fileInfo = await FileSystem.getInfoAsync(imagePath);
+                  
+                  if (fileInfo.exists) {
+                    // Create images directory if needed
+                    const imagesDir = `${FileSystem.documentDirectory}images`;
+                    const dirInfo = await FileSystem.getInfoAsync(imagesDir);
+                    if (!dirInfo.exists) {
+                      await FileSystem.makeDirectoryAsync(imagesDir, { intermediates: true });
+                    }
+                    
+                    // Copy to permanent location
+                    const fileName = `note_${note.id}_page_${page.id}.jpg`;
+                    const permanentUri = `${imagesDir}/${fileName}`;
+                    
+                    await FileSystem.copyAsync({
+                      from: imagePath,
+                      to: permanentUri,
+                    });
+                    
+                    console.log('✅ Migrated image to permanent storage:', permanentUri);
+                    needsMigration = true;
+                    
+                    return {
+                      ...page,
+                      originalImagePath: permanentUri,
+                      processedImagePath: permanentUri,
+                    };
+                  } else {
+                    console.log('⚠️ Image not found in cache, keeping original path:', imagePath);
+                  }
+                } catch (migrationError) {
+                  console.log('⚠️ Could not migrate image:', migrationError);
+                }
+              }
+            }
+            
             return page;
-          });
+          }));
+          
           return {
             ...note,
             pages: migratedPages,
           };
-        });
+        }));
 
         // Save migrated notes if changes were made
         if (needsMigration) {
+          console.log('🔄 Migrating notes to permanent storage...');
           for (const note of migratedNotes) {
             await StorageService.updateNote(note.id, note);
           }
           notes = migratedNotes;
         }
 
-        setCourse({ ...loadedCourse, notes });
+        // Filter out archived notes
+        const activeNotes = notes.filter(note => !note.isArchived);
+        setCourse({ ...loadedCourse, notes: activeNotes });
       } else {
         navigation.goBack();
       }
@@ -608,12 +793,19 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
   const [showCourseMenu, setShowCourseMenu] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showColorModal, setShowColorModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [customTags, setCustomTags] = useState<any[]>([]);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  
+  // Multi-select & Merge states
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
+  const [isMergingNotes, setIsMergingNotes] = useState(false);
+  const [showBulkActionsMenu, setShowBulkActionsMenu] = useState(false);
 
   // Show loading or return null if no course
   if (isLoading || !course) {
@@ -665,18 +857,30 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
   };
 
   const getFileType = (note: Note): 'image' | 'pdf' => {
-    // Check if the first page is an image (has originalImagePath with image extension)
+    // Merged notes are always exported as PDF
+    if (note.tags?.includes('merged')) {
+      return 'pdf';
+    }
+    
+    // Check if the first page is a PDF or image
     if (note.pages && note.pages.length > 0) {
       const firstPage = note.pages[0];
       const imagePath = firstPage.originalImagePath || firstPage.processedImagePath;
       if (imagePath) {
         const uri = imagePath.toLowerCase();
-        if (uri.includes('.jpg') || uri.includes('.jpeg') || uri.includes('.png') || uri.includes('.gif') || uri.includes('.webp')) {
+        // Check for PDF first
+        if (uri.includes('.pdf')) {
+          return 'pdf';
+        }
+        // Otherwise it's an image
+        if (uri.includes('.jpg') || uri.includes('.jpeg') || uri.includes('.png') || 
+            uri.includes('.gif') || uri.includes('.webp') || uri.includes('file://')) {
           return 'image';
         }
       }
     }
-    return 'pdf';
+    // Default to image (most notes are images from camera/gallery)
+    return 'image';
   };
 
   const handleCreateNote = async (method: 'camera' | 'gallery' | 'file') => {
@@ -715,7 +919,7 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         }
 
         const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaType.Images,
+          mediaTypes: ['images'],
           quality: 1,
           allowsEditing: false,
         });
@@ -731,19 +935,32 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaType.Images,
+          mediaTypes: ['images'],
           quality: 1,
           allowsMultipleSelection: true,
           selectionLimit: 10,
         });
 
         if (!result.canceled && result.assets.length > 0) {
-          for (const asset of result.assets) {
-            await createNoteFromImage(asset.uri);
+          // If multiple images selected, create single note with multiple pages
+          if (result.assets.length > 1) {
+            await createNoteFromMultipleImages(result.assets);
+          } else {
+            // Single image = single note
+            await createNoteFromImage(result.assets[0].uri);
           }
         }
       } else if (method === 'file') {
-        Alert.alert('Yakında', 'PDF dosyası seçme özelliği yakında eklenecek.');
+        // Pick PDF file
+        const result = await DocumentPicker.getDocumentAsync({
+          type: 'application/pdf',
+          copyToCacheDirectory: true,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const file = result.assets[0];
+          await createNoteFromPDF(file.uri, file.name);
+        }
       }
     } catch (error) {
       console.error('Error creating note:', error);
@@ -751,9 +968,86 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
     }
   };
 
+  const createNoteFromMultipleImages = async (assets: any[]) => {
+    try {
+      const noteId = Date.now().toString();
+      
+      // Create images directory if it doesn't exist
+      const imagesDir = `${FileSystem.documentDirectory}images`;
+      const dirInfo = await FileSystem.getInfoAsync(imagesDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(imagesDir, { intermediates: true });
+      }
+      
+      // Copy all images to permanent storage
+      const pages = await Promise.all(
+        assets.map(async (asset, index) => {
+          const fileName = `note_${noteId}_page_${index + 1}.jpg`;
+          const permanentUri = `${imagesDir}/${fileName}`;
+          
+          await FileSystem.copyAsync({
+            from: asset.uri,
+            to: permanentUri,
+          });
+          
+          console.log(`✅ Image ${index + 1}/${assets.length} copied to permanent location:`, permanentUri);
+          
+          return {
+            id: (index + 1).toString(),
+            noteId: noteId,
+            originalImagePath: permanentUri,
+            processedImagePath: permanentUri,
+            order: index,
+            rotation: 0,
+            isProcessed: false,
+            createdAt: new Date(),
+          };
+        })
+      );
+      
+      const newNote: Note = {
+        id: noteId,
+        name: `Not ${new Date().toLocaleDateString('tr-TR')}`,
+        courseId: courseId,
+        pages: pages,
+        tags: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await StorageService.addNote(newNote);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      console.log(`✅ Created note with ${assets.length} pages`);
+      loadCourse();
+    } catch (error) {
+      console.error('Error saving multi-page note:', error);
+      throw error;
+    }
+  };
+
   const createNoteFromImage = async (imageUri: string) => {
     try {
       const noteId = Date.now().toString();
+      
+      // Create images directory if it doesn't exist
+      const imagesDir = `${FileSystem.documentDirectory}images`;
+      const dirInfo = await FileSystem.getInfoAsync(imagesDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(imagesDir, { intermediates: true });
+      }
+      
+      // Copy image to permanent storage (DocumentDirectory/images)
+      const fileName = `note_${noteId}_page_1.jpg`;
+      const permanentUri = `${imagesDir}/${fileName}`;
+      
+      await FileSystem.copyAsync({
+        from: imageUri,
+        to: permanentUri,
+      });
+      
+      console.log('✅ Image copied to permanent location:', permanentUri);
+      
       const newNote: Note = {
         id: noteId,
         name: `Not ${new Date().toLocaleDateString('tr-TR')}`,
@@ -762,8 +1056,8 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
           {
             id: '1',
             noteId: noteId,
-            originalImagePath: imageUri,
-            processedImagePath: imageUri,
+            originalImagePath: permanentUri,
+            processedImagePath: permanentUri,
             order: 0,
             rotation: 0,
             isProcessed: false,
@@ -784,6 +1078,69 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
     }
   };
 
+  const createNoteFromPDF = async (pdfUri: string, fileName: string) => {
+    try {
+      const noteId = Date.now().toString();
+      const noteName = fileName.replace('.pdf', '') || `PDF ${new Date().toLocaleDateString('tr-TR')}`;
+      
+      console.log('📄 Creating note from PDF:', fileName);
+      console.log('PDF URI (temp):', pdfUri);
+      
+      // Copy PDF to permanent location (DocumentPicker cache gets cleared)
+      const permanentPath = `${FileSystem.documentDirectory}pdfs/note_${noteId}.pdf`;
+      
+      // Create pdfs directory if it doesn't exist
+      const pdfsDir = `${FileSystem.documentDirectory}pdfs`;
+      const dirInfo = await FileSystem.getInfoAsync(pdfsDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(pdfsDir, { intermediates: true });
+      }
+      
+      // Copy PDF to permanent location
+      await FileSystem.copyAsync({
+        from: pdfUri,
+        to: permanentPath,
+      });
+      
+      console.log('✅ PDF copied to permanent location:', permanentPath);
+      
+      const newNote: Note = {
+        id: noteId,
+        name: noteName,
+        courseId: courseId,
+        pages: [
+          {
+            id: '1',
+            noteId: noteId,
+            originalImagePath: permanentPath,
+            processedImagePath: permanentPath,
+            order: 0,
+            rotation: 0,
+            isProcessed: false,
+            createdAt: new Date(),
+          },
+        ],
+        tags: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await StorageService.addNote(newNote);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      Alert.alert(
+        'PDF Eklendi!',
+        `"${noteName}" başarıyla eklendi. PDF'in tüm sayfalarını görüntüleyebilirsin.`,
+        [{ text: 'Tamam' }]
+      );
+      
+      loadCourse();
+    } catch (error) {
+      console.error('Error saving PDF note:', error);
+      throw error;
+    }
+  };
+
   const toggleViewMode = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setViewMode(viewMode === 'grid' ? 'list' : 'grid');
@@ -792,18 +1149,13 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
   const handleShareNote = async (note: Note) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setShowNoteMenu(false);
       
-      const message = `📚 ${course.name} - ${note.name}\n\n` +
-        `📄 ${note.pages.length} sayfa\n` +
-        `📅 ${formatDate(note.updatedAt)}\n\n` +
-        `NoteMerge ile oluşturuldu 🎓`;
-
-      await Share.share({
-        message: message,
-        title: `${course.name} - ${note.name}`,
-      });
+      // Export note as PDF and share
+      await handleExportPDF(note);
     } catch (error) {
       console.error('Error sharing note:', error);
+      Alert.alert('Hata', 'Not paylaşılırken bir hata oluştu.');
     }
   };
 
@@ -813,6 +1165,28 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
     try {
       setIsGeneratingPDF(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // Check if this is a PDF note (not images)
+      const isPDFNote = note.pages.length === 1 && 
+                        note.pages[0].originalImagePath?.endsWith('.pdf');
+
+      if (isPDFNote) {
+        // If it's already a PDF, add watermark and share
+        console.log('📄 Processing PDF with watermark');
+        const watermarkedPdfUri = await addWatermarkToPDF(
+          note.pages[0].originalImagePath,
+          course.name,
+          note.name,
+          isPremium
+        );
+        await sharePDF(watermarkedPdfUri, note.name);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowNoteMenu(false);
+        return;
+      }
+
+      // For image notes, generate PDF
+      console.log('🖼️ Generating PDF from images');
 
       // Load watermark icon as base64 (only if not premium)
       let watermarkBase64: string | undefined;
@@ -834,7 +1208,7 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         }
       }
 
-      // Generate PDF
+      // Generate PDF from images
       const pdfUri = await generatePDFFromNote(note, course.name, isPremium, watermarkBase64);
       
       // Share PDF
@@ -855,24 +1229,445 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
     }
   };
 
+  const handleChangeColor = async (color: CourseColorType) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      // Update course color
+      await StorageService.updateCourse(course.id, {
+        color: color.gradient[0],
+        colorEnd: color.gradient[1],
+      });
+      
+      setShowColorModal(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      loadCourse();
+    } catch (error) {
+      console.error('Error changing color:', error);
+      Alert.alert('Hata', 'Renk değiştirilirken bir hata oluştu.');
+    }
+  };
+
   const handleShareCourse = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       const noteCount = course.notes.length;
       const totalPages = course.notes.reduce((sum, note) => sum + (note.pages?.length || 0), 0);
-      
-      const message = `📚 ${course.name}\n\n` +
-        `📝 ${noteCount} not\n` +
-        `📄 ${totalPages} sayfa\n\n` +
-        `NoteMerge ile organize ediyorum! 🎓`;
 
-      await Share.share({
-        message: message,
-        title: course.name,
-      });
+      if (noteCount === 0) {
+        Alert.alert('Uyarı', 'Bu derste henüz not yok. Paylaşmak için en az 1 not ekleyin.');
+        return;
+      }
+
+      // Show options: Export as JSON or Export as PDF
+      Alert.alert(
+        'Dersi Nasıl Paylaşmak İstersiniz?',
+        `${course.name} - ${noteCount} not, ${totalPages} sayfa`,
+        [
+          {
+            text: 'PDF Olarak',
+            onPress: async () => {
+              try {
+                setIsGeneratingPDF(true);
+                
+                // Merge all notes into one PDF
+                const allPages: any[] = [];
+                course.notes.forEach(note => {
+                  note.pages.forEach(page => {
+                    allPages.push(page);
+                  });
+                });
+
+                if (allPages.length === 0) {
+                  Alert.alert('Uyarı', 'Paylaşılacak sayfa bulunamadı.');
+                  setIsGeneratingPDF(false);
+                  return;
+                }
+
+                // Generate PDF from all pages
+                const pdfUri = await generatePDFFromNote(
+                  { ...course.notes[0], pages: allPages, name: course.name },
+                  course.name
+                );
+
+                // Add watermark if not premium
+                const finalPdfUri = isPremium 
+                  ? pdfUri 
+                  : await addWatermarkToPDF(pdfUri);
+
+                // Share the PDF
+                await sharePDF(finalPdfUri, course.name);
+                
+                setIsGeneratingPDF(false);
+              } catch (error) {
+                console.error('Error exporting course as PDF:', error);
+                Alert.alert('Hata', 'PDF oluşturulurken bir hata oluştu.');
+                setIsGeneratingPDF(false);
+              }
+            },
+          },
+          {
+            text: 'JSON Dosyası Olarak',
+            onPress: async () => {
+              try {
+                // Create export data with full course info
+                const exportData = {
+                  version: '1.0',
+                  exportDate: new Date().toISOString(),
+                  course: {
+                    name: course.name,
+                    color: course.color,
+                    colorEnd: course.colorEnd,
+                    icon: course.icon,
+                    createdAt: course.createdAt,
+                  },
+                  notes: course.notes.map(note => ({
+                    id: note.id,
+                    name: note.name,
+                    tags: note.tags,
+                    pages: note.pages,
+                    createdAt: note.createdAt,
+                    updatedAt: note.updatedAt,
+                  })),
+                  stats: {
+                    noteCount,
+                    totalPages,
+                  },
+                };
+
+                // Save to temporary file
+                const fileName = `${course.name.replace(/[^a-z0-9]/gi, '_')}_NoteMerge.json`;
+                const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+                
+                await FileSystem.writeAsStringAsync(
+                  fileUri,
+                  JSON.stringify(exportData, null, 2)
+                );
+
+                // Share the file
+                const isAvailable = await Sharing.isAvailableAsync();
+                
+                if (isAvailable) {
+                  await Sharing.shareAsync(fileUri, {
+                    mimeType: 'application/json',
+                    dialogTitle: `${course.name} - NoteMerge Export`,
+                    UTI: 'public.json',
+                  });
+                }
+
+                // Clean up temp file
+                setTimeout(async () => {
+                  try {
+                    const fileInfo = await FileSystem.getInfoAsync(fileUri);
+                    if (fileInfo.exists) {
+                      await FileSystem.deleteAsync(fileUri, { idempotent: true });
+                    }
+                  } catch (err) {
+                    console.log('Temp file cleanup:', err);
+                  }
+                }, 10000);
+              } catch (error) {
+                console.error('Error exporting course as JSON:', error);
+                Alert.alert('Hata', 'JSON dosyası oluşturulurken bir hata oluştu.');
+              }
+            },
+          },
+          {
+            text: 'İptal',
+            style: 'cancel',
+          },
+        ]
+      );
+
     } catch (error) {
       console.error('Error sharing course:', error);
+      Alert.alert('Hata', 'Ders paylaşılırken bir hata oluştu.');
+    }
+  };
+
+  // ============================================================
+  // MULTI-SELECT & MERGE FUNCTIONS
+  // ============================================================
+  
+  const toggleSelectionMode = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedNoteIds([]);
+  };
+
+  const toggleNoteSelection = (noteId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedNoteIds(prev => 
+      prev.includes(noteId) 
+        ? prev.filter(id => id !== noteId)
+        : [...prev, noteId]
+    );
+  };
+
+  const selectAllNotes = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const allNoteIds = filteredNotes.map(note => note.id);
+    setSelectedNoteIds(allNoteIds);
+  };
+
+  const deselectAllNotes = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedNoteIds([]);
+  };
+
+  const handleBulkArchive = async () => {
+    if (selectedNoteIds.length === 0) return;
+
+    Alert.alert(
+      'Notları Arşivle',
+      `${selectedNoteIds.length} not arşivlenecek. Emin misiniz?`,
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Arşivle',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              
+              console.log('🗄️ Bulk archiving', selectedNoteIds.length, 'notes');
+              for (const noteId of selectedNoteIds) {
+                await StorageService.updateNote(noteId, { isArchived: true });
+              }
+              console.log('✅ Bulk archive successful');
+              
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setIsSelectionMode(false);
+              setSelectedNoteIds([]);
+              setShowBulkActionsMenu(false);
+              loadCourse();
+            } catch (error) {
+              console.error('❌ Error archiving notes:', error);
+              Alert.alert('Hata', 'Notlar arşivlenirken bir hata oluştu.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedNoteIds.length === 0) return;
+
+    Alert.alert(
+      'Notları Sil',
+      `${selectedNoteIds.length} not kalıcı olarak silinecek. Bu işlem geri alınamaz!`,
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              
+              for (const noteId of selectedNoteIds) {
+                await StorageService.deleteNote(noteId);
+              }
+              
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setIsSelectionMode(false);
+              setSelectedNoteIds([]);
+              setShowBulkActionsMenu(false);
+              loadCourse();
+            } catch (error) {
+              console.error('Error deleting notes:', error);
+              Alert.alert('Hata', 'Notlar silinirken bir hata oluştu.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleBulkAddTag = (tagId: string) => {
+    Alert.alert(
+      'Etiket Ekle',
+      `${selectedNoteIds.length} nota "${PredefinedTags.find(t => t.id === tagId)?.name}" etiketi eklenecek.`,
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Ekle',
+          onPress: async () => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              
+              for (const noteId of selectedNoteIds) {
+                const note = course.notes.find(n => n.id === noteId);
+                if (note) {
+                  const currentTags = note.tags || [];
+                  if (!currentTags.includes(tagId)) {
+                    await StorageService.updateNote(noteId, { 
+                      tags: [...currentTags, tagId] 
+                    });
+                  }
+                }
+              }
+              
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setShowBulkActionsMenu(false);
+              loadCourse();
+            } catch (error) {
+              console.error('Error adding tags:', error);
+              Alert.alert('Hata', 'Etiketler eklenirken bir hata oluştu.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleMergeNotes = async () => {
+    if (selectedNoteIds.length < 2) {
+      Alert.alert('Uyarı', 'En az 2 not seçmelisiniz.');
+      return;
+    }
+
+    try {
+      setIsMergingNotes(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // Get selected notes in order
+      const selectedNotes = filteredNotes.filter(note => 
+        selectedNoteIds.includes(note.id)
+      );
+
+      console.log('🔀 Merging', selectedNotes.length, 'notes');
+
+      // Check if all notes are PDFs (for premium users)
+      const allPDFs = selectedNotes.every(note => 
+        note.pages.length === 1 && 
+        note.pages[0].originalImagePath?.endsWith('.pdf')
+      );
+
+      let mergedNote: Note;
+      const noteId = Date.now().toString();
+      
+      // Create meaningful merged note name
+      const firstNoteName = selectedNotes[0].name;
+      const additionalCount = selectedNotes.length - 1;
+      
+      // Shorten note name if too long (max 25 chars)
+      const shortFirstName = firstNoteName.length > 25 
+        ? firstNoteName.substring(0, 25) + '...'
+        : firstNoteName;
+      
+      const mergedNoteName = additionalCount > 0 
+        ? `${shortFirstName} + ${additionalCount}`
+        : shortFirstName;
+      
+      // Calculate total pages for confirmation message
+      const totalPages = selectedNotes.reduce((sum, note) => sum + (note.pages?.length || 0), 0);
+
+      if (isPremium && allPDFs) {
+        // Premium: Merge PDFs directly without extracting pages
+        console.log('✨ Premium: Merging PDFs directly');
+        
+        // Import pdf-lib dynamically
+        const { PDFDocument } = await import('pdf-lib');
+        const mergedPdf = await PDFDocument.create();
+
+        for (const note of selectedNotes) {
+          const pdfUri = note.pages[0].originalImagePath;
+          const pdfBytes = await FileSystem.readAsStringAsync(pdfUri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          const pdf = await PDFDocument.load(pdfBytes);
+          const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+          copiedPages.forEach((page) => mergedPdf.addPage(page));
+        }
+
+        // Save merged PDF
+        const mergedPdfBytes = await mergedPdf.saveAsBase64();
+        const mergedPdfPath = `${FileSystem.documentDirectory}merged_${noteId}.pdf`;
+        await FileSystem.writeAsStringAsync(mergedPdfPath, mergedPdfBytes, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        mergedNote = {
+          id: noteId,
+          name: mergedNoteName,
+          courseId: courseId,
+          pages: [{
+            id: '1',
+            noteId: noteId,
+            originalImagePath: mergedPdfPath,
+            processedImagePath: mergedPdfPath,
+            order: 0,
+            rotation: 0,
+            isProcessed: false,
+            createdAt: new Date(),
+          }],
+          tags: ['merged'],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      } else {
+        // Free or mixed content: Merge all pages as images
+        console.log('📄 Standard: Merging pages as images');
+        const allPages = selectedNotes.flatMap(note => note.pages || []);
+
+        mergedNote = {
+          id: noteId,
+          name: mergedNoteName,
+          courseId: courseId,
+          pages: allPages.map((page, index) => ({
+            ...page,
+            id: `${noteId}-${index}`,
+            noteId: noteId,
+            order: index,
+          })),
+          tags: ['merged'],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+
+      // Save merged note
+      await StorageService.addNote(mergedNote);
+
+      // Ask if user wants to delete original notes
+      Alert.alert(
+        'Birleştirme Başarılı',
+        `${selectedNotes.length} not birleştirildi (${totalPages} sayfa).\n\nOrijinal notları silmek ister misiniz?`,
+        [
+          {
+            text: 'Hayır, Sakla',
+            style: 'cancel',
+            onPress: () => {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setIsSelectionMode(false);
+              setSelectedNoteIds([]);
+              loadCourse();
+            }
+          },
+          {
+            text: 'Evet, Sil',
+            style: 'destructive',
+            onPress: async () => {
+              for (const noteId of selectedNoteIds) {
+                await StorageService.deleteNote(noteId);
+              }
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setIsSelectionMode(false);
+              setSelectedNoteIds([]);
+              loadCourse();
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error merging notes:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Hata', 'Notlar birleştirilirken bir hata oluştu.');
+    } finally {
+      setIsMergingNotes(false);
     }
   };
 
@@ -943,15 +1738,47 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
     const fileType = getFileType(note);
     const iconName = fileType === 'image' ? 'image' : 'document';
     
+    const isSelected = selectedNoteIds.includes(note.id);
+    
     return (
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => navigation.navigate('PDFPreview', { courseId: course.id, noteId: note.id })}
+        onPress={() => {
+          if (isSelectionMode) {
+            toggleNoteSelection(note.id);
+          } else {
+            navigation.navigate('PDFPreview', { courseId: course.id, noteId: note.id });
+          }
+        }}
+        onLongPress={() => {
+          if (!isSelectionMode) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setIsSelectionMode(true);
+            setSelectedNoteIds([note.id]);
+          }
+        }}
         style={styles.noteCardGrid}
       >
         <GlassCard style={styles.noteCard}>
+          {isSelectionMode && (
+            <View style={styles.checkboxContainer}>
+              <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                {isSelected && (
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                )}
+              </View>
+            </View>
+          )}
           <View style={styles.noteThumbnail}>
-            <Ionicons name={iconName} size={40} color={Colors.text.tertiary} />
+            {note.pages && note.pages.length > 0 && note.pages[0].processedImagePath ? (
+              <Image 
+                source={{ uri: note.pages[0].processedImagePath }} 
+                style={styles.thumbnailImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Ionicons name={iconName} size={40} color={Colors.text.tertiary} />
+            )}
           </View>
         <View style={styles.noteInfo}>
           <Text style={styles.noteName} numberOfLines={2}>{note.name}</Text>
@@ -963,9 +1790,11 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
             <Text style={styles.noteDate}>{formatDate(note.updatedAt)}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.noteMenu}>
-          <Ionicons name="ellipsis-vertical" size={16} color={Colors.text.tertiary} />
-        </TouchableOpacity>
+        {!isSelectionMode && (
+          <TouchableOpacity style={styles.noteMenu}>
+            <Ionicons name="ellipsis-vertical" size={16} color={Colors.text.tertiary} />
+          </TouchableOpacity>
+        )}
       </GlassCard>
     </TouchableOpacity>
     );
@@ -984,13 +1813,37 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
       return sum + pageSize;
     }, 0);
     
+    const isSelected = selectedNoteIds.includes(note.id);
+    
     return (
       <View style={styles.noteCardWrapper}>
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('PDFPreview', { courseId: course.id, noteId: note.id })}
+          onPress={() => {
+            if (isSelectionMode) {
+              toggleNoteSelection(note.id);
+            } else {
+              navigation.navigate('PDFPreview', { courseId: course.id, noteId: note.id });
+            }
+          }}
+          onLongPress={() => {
+            if (!isSelectionMode) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setIsSelectionMode(true);
+              setSelectedNoteIds([note.id]);
+            }
+          }}
           style={styles.noteCardList}
         >
+          {isSelectionMode && (
+            <View style={styles.checkboxContainer}>
+              <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                {isSelected && (
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                )}
+              </View>
+            </View>
+          )}
           <LinearGradient
             colors={[course.color, course.colorEnd]}
             start={{ x: 0, y: 0 }}
@@ -1028,16 +1881,18 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
           </View>
         </TouchableOpacity>
         
-        <TouchableOpacity 
-          style={styles.noteMenuButton}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSelectedNote(note);
-            setShowNoteMenu(true);
-          }}
-        >
-          <Ionicons name="ellipsis-vertical" size={20} color={Colors.text.tertiary} />
-        </TouchableOpacity>
+        {!isSelectionMode && (
+          <TouchableOpacity 
+            style={styles.noteMenuButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedNote(note);
+              setShowNoteMenu(true);
+            }}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color={Colors.text.tertiary} />
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -1118,7 +1973,7 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setShowCourseMenu(false);
-                // TODO: Change color
+                setShowColorModal(true);
               }}
               style={styles.actionItem}
             >
@@ -1171,6 +2026,25 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
 
             <TouchableOpacity
               activeOpacity={0.7}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setShowCourseMenu(false);
+                Alert.alert('🚀 Yakında', 'Çalışma hatırlatıcıları v1.1.0\'da aktif olacak!');
+              }}
+              style={styles.actionItem}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: theme.colors.accentGradient[0] + '20' }]}>
+                <Ionicons name="alarm-outline" size={24} color={theme.colors.accentGradient[0]} />
+              </View>
+              <View style={styles.actionText}>
+                <Text style={styles.actionTitle}>Çalışma Hatırlatıcısı</Text>
+                <Text style={styles.actionSubtitle}>v1.1.0'da aktif olacak</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
               onPress={async () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setShowCourseMenu(false);
@@ -1183,11 +2057,13 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
                       text: 'Arşivle',
                       onPress: async () => {
                         try {
+                          console.log('🗄️ Archiving course:', courseId, course.name);
                           await StorageService.updateCourse(courseId, { isArchived: true });
+                          console.log('✅ Course archived successfully');
                           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                           navigation.goBack();
                         } catch (error) {
-                          console.error('Error archiving course:', error);
+                          console.error('❌ Error archiving course:', error);
                           Alert.alert('Hata', 'Ders arşivlenirken bir hata oluştu.');
                         }
                       },
@@ -1366,38 +2242,56 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
 
             <TouchableOpacity
               activeOpacity={0.7}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setShowNoteMenu(false);
+                if (selectedNote) {
+                  setIsSelectionMode(true);
+                  setSelectedNoteIds([selectedNote.id]);
+                }
+              }}
+              style={styles.actionItem}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#10B981' + '20' }]}>
+                <Ionicons name="git-merge-outline" size={24} color="#10B981" />
+              </View>
+              <View style={styles.actionText}>
+                <Text style={styles.actionTitle}>Diğer Notlarla Birleştir</Text>
+                <Text style={styles.actionSubtitle}>Notları tek PDF'te topla</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
               onPress={async () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setShowNoteMenu(false);
                 
                 if (selectedNote) {
-                  try {
-                    // Archive the entire course if this is the last note
-                    if (course.notes.length === 1) {
-                      Alert.alert(
-                        'Dersi Arşivle',
-                        'Bu dersin son notu. Tüm dersi arşivlemek ister misin?',
-                        [
-                          { text: 'İptal', style: 'cancel' },
-                          {
-                            text: 'Arşivle',
-                            onPress: async () => {
-                              await StorageService.updateCourse(courseId, { isArchived: true });
-                              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                              navigation.goBack();
-                            },
-                          },
-                        ]
-                      );
-                    } else {
-                      await StorageService.deleteNote(selectedNote.id);
-                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                      loadCourse();
-                    }
-                  } catch (error) {
-                    console.error('Error archiving:', error);
-                    Alert.alert('Hata', 'Arşivleme sırasında bir hata oluştu.');
-                  }
+                  Alert.alert(
+                    'Notu Arşivle',
+                    `"${selectedNote.name}" notunu arşivlemek istediğinize emin misiniz?`,
+                    [
+                      { text: 'İptal', style: 'cancel' },
+                      {
+                        text: 'Arşivle',
+                        onPress: async () => {
+                          try {
+                            console.log('🗄️ Archiving note:', selectedNote.id, selectedNote.name);
+                            await StorageService.updateNote(selectedNote.id, { isArchived: true });
+                            console.log('✅ Note archived successfully');
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            setShowNoteMenu(false);
+                            loadCourse();
+                          } catch (error) {
+                            console.error('❌ Error archiving note:', error);
+                            Alert.alert('Hata', 'Not arşivlenirken bir hata oluştu.');
+                          }
+                        },
+                      },
+                    ]
+                  );
                 }
               }}
               style={styles.actionItem}
@@ -1562,7 +2456,7 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
             
             <Text style={styles.actionSheetTitle}>Etiket Seç</Text>
             
-            <ScrollView style={{ maxHeight: 400 }}>
+            <ScrollView style={{ maxHeight: 350 }}>
               {PredefinedTags.map((tag) => {
                 const isSelected = selectedNote?.tags?.includes(tag.id) || false;
                 return (
@@ -1599,6 +2493,102 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
     </Modal>
   );
 
+  // Bulk Actions Modal
+  const BulkActionsModal = () => (
+    <Modal
+      visible={showBulkActionsMenu}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowBulkActionsMenu(false)}
+    >
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={() => setShowBulkActionsMenu(false)}
+        style={styles.modalOverlay}
+      >
+        <View style={styles.actionSheetContainer}>
+          <View style={styles.actionSheet}>
+            <View style={styles.actionSheetHandle} />
+            
+            <Text style={styles.actionSheetTitle}>
+              {selectedNoteIds.length} Not İşlemleri
+            </Text>
+            
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                setShowBulkActionsMenu(false);
+                setTimeout(() => handleBulkArchive(), 300);
+              }}
+              style={styles.actionItem}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#F59E0B20' }]}>
+                <Ionicons name="archive-outline" size={24} color="#F59E0B" />
+              </View>
+              <View style={styles.actionText}>
+                <Text style={styles.actionTitle}>Arşivle</Text>
+                <Text style={styles.actionSubtitle}>Notları arşive taşı</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                setShowBulkActionsMenu(false);
+                setTimeout(() => handleBulkDelete(), 300);
+              }}
+              style={styles.actionItem}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#EF444420' }]}>
+                <Ionicons name="trash-outline" size={24} color="#EF4444" />
+              </View>
+              <View style={styles.actionText}>
+                <Text style={styles.actionTitle}>Sil</Text>
+                <Text style={styles.actionSubtitle}>Notları kalıcı olarak sil</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <View style={{ marginTop: Spacing.md, marginBottom: Spacing.sm }}>
+              <Text style={[styles.actionSheetTitle, { fontSize: 14 }]}>Etiket Ekle</Text>
+            </View>
+
+            <ScrollView style={{ maxHeight: 200 }}>
+              {PredefinedTags.slice(0, 5).map((tag) => (
+                <TouchableOpacity
+                  key={tag.id}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setShowBulkActionsMenu(false);
+                    setTimeout(() => handleBulkAddTag(tag.id), 300);
+                  }}
+                  style={styles.actionItem}
+                >
+                  <View style={[styles.actionIcon, { backgroundColor: tag.color + '20' }]}>
+                    <Ionicons name={tag.icon as any} size={24} color={tag.color} />
+                  </View>
+                  <View style={styles.actionText}>
+                    <Text style={styles.actionTitle}>{tag.name}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setShowBulkActionsMenu(false)}
+              style={styles.cancelButton}
+            >
+              <Text style={styles.cancelText}>İptal</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -1607,126 +2597,205 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         colors={[Colors.background, Colors.backgroundSecondary]}
         style={styles.gradient}
       >
-        {/* Hero Section */}
-        <LinearGradient
-          colors={[course.color, course.colorEnd]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          <BlurView intensity={20} tint="dark" style={styles.heroBlur}>
-            <View style={styles.heroHeader}>
-              <IconButton
-                icon="arrow-back"
-                onPress={() => navigation.goBack()}
-                backgroundColor="rgba(255, 255, 255, 0.2)"
-                color={Colors.text.inverse}
-              />
-              <View style={styles.heroActions}>
-                <IconButton
-                  icon={viewMode === 'list' ? 'grid' : 'list'}
-                  onPress={toggleViewMode}
-                  backgroundColor="rgba(255, 255, 255, 0.2)"
-                  color={Colors.text.inverse}
-                />
-                <IconButton
-                  icon="ellipsis-horizontal"
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowCourseMenu(true);
-                  }}
-                  backgroundColor="rgba(255, 255, 255, 0.2)"
-                  color={Colors.text.inverse}
-                />
-              </View>
-            </View>
-
-            <View style={styles.heroContent}>
-              <View style={styles.heroIconContainer}>
-                <Ionicons name={course.icon as any} size={28} color={Colors.text.inverse} />
-              </View>
-              <Text style={styles.heroTitle}>{course.name}</Text>
-            </View>
-          </BlurView>
-        </LinearGradient>
-
-        {/* Stats Card */}
-        {course.notes.length > 0 && (
-          <View style={styles.statsSection}>
-            <StatsCard />
-          </View>
-        )}
-
-        {/* Tag Filters */}
-        {course.notes.length > 0 && (
-          <View style={styles.tagFiltersContainer}>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tagFiltersContent}
-            >
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedTagFilter(null);
-                }}
-                style={[
-                  styles.tagFilterChip,
-                  !selectedTagFilter && styles.tagFilterChipActive,
-                ]}
-              >
-                <Text style={[
-                  styles.tagFilterText,
-                  !selectedTagFilter && styles.tagFilterTextActive,
-                ]}>
-                  Tümü
-                </Text>
-              </TouchableOpacity>
-
-              {allTags.map((tag) => {
-                const hasNotesWithTag = course.notes.some(note => note.tags?.includes(tag.id));
-                if (!hasNotesWithTag) return null;
-
-                return (
-                  <TouchableOpacity
-                    key={tag.id}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setSelectedTagFilter(tag.id);
-                    }}
-                    style={[
-                      styles.tagFilterChip,
-                      selectedTagFilter === tag.id && styles.tagFilterChipActive,
-                      { borderColor: tag.color },
-                    ]}
-                  >
-                    <Ionicons 
-                      name={tag.icon as any} 
-                      size={16} 
-                      color={selectedTagFilter === tag.id ? '#FFF' : tag.color} 
-                    />
-                    <Text style={[
-                      styles.tagFilterText,
-                      selectedTagFilter === tag.id && styles.tagFilterTextActive,
-                      { color: selectedTagFilter === tag.id ? '#FFF' : tag.color },
-                    ]}>
-                      {tag.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Content */}
+        {/* Content - Everything scrolls together */}
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
+          {/* Hero Section */}
+          <LinearGradient
+            colors={[course.color, course.colorEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}
+          >
+            <BlurView intensity={20} tint="dark" style={styles.heroBlur}>
+              <View style={styles.heroHeader}>
+                <IconButton
+                  icon="arrow-back"
+                  onPress={() => navigation.goBack()}
+                  backgroundColor="rgba(255, 255, 255, 0.2)"
+                  color={Colors.text.inverse}
+                />
+                <View style={styles.heroActions}>
+                  {course.notes.length > 0 && (
+                    <IconButton
+                      icon={isSelectionMode ? "close" : "checkmark-done"}
+                      onPress={toggleSelectionMode}
+                      backgroundColor={isSelectionMode ? "rgba(239, 68, 68, 0.3)" : "rgba(255, 255, 255, 0.2)"}
+                      color={Colors.text.inverse}
+                    />
+                  )}
+                  <IconButton
+                    icon={viewMode === 'list' ? 'grid' : 'list'}
+                    onPress={toggleViewMode}
+                    backgroundColor="rgba(255, 255, 255, 0.2)"
+                    color={Colors.text.inverse}
+                  />
+                  <IconButton
+                    icon="ellipsis-horizontal"
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowCourseMenu(true);
+                    }}
+                    backgroundColor="rgba(255, 255, 255, 0.2)"
+                    color={Colors.text.inverse}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.heroContent}>
+                <View style={styles.heroIconContainer}>
+                  <Ionicons name={course.icon as any} size={28} color={Colors.text.inverse} />
+                </View>
+                <Text style={styles.heroTitle}>{course.name}</Text>
+              </View>
+            </BlurView>
+          </LinearGradient>
+
+          {/* Stats Card */}
+          {course.notes.length > 0 && (
+            <View style={styles.statsSection}>
+              <StatsCard />
+            </View>
+          )}
+
+          {/* Tag Filters */}
+          {course.notes.length > 0 && (
+            <View style={styles.tagFiltersContainer}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tagFiltersContent}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedTagFilter(null);
+                  }}
+                  style={[
+                    styles.tagFilterChip,
+                    !selectedTagFilter && styles.tagFilterChipActive,
+                  ]}
+                >
+                  <Text style={[
+                    styles.tagFilterText,
+                    !selectedTagFilter && styles.tagFilterTextActive,
+                  ]}>
+                    Tümü
+                  </Text>
+                </TouchableOpacity>
+
+                {allTags.map((tag) => {
+                  const hasNotesWithTag = course.notes.some(note => note.tags?.includes(tag.id));
+                  if (!hasNotesWithTag) return null;
+
+                  return (
+                    <TouchableOpacity
+                      key={tag.id}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setSelectedTagFilter(tag.id);
+                      }}
+                      style={[
+                        styles.tagFilterChip,
+                        selectedTagFilter === tag.id && styles.tagFilterChipActive,
+                        { borderColor: tag.color },
+                      ]}
+                    >
+                      <Ionicons 
+                        name={tag.icon as any} 
+                        size={16} 
+                        color={selectedTagFilter === tag.id ? '#FFF' : tag.color} 
+                      />
+                      <Text style={[
+                        styles.tagFilterText,
+                        selectedTagFilter === tag.id && styles.tagFilterTextActive,
+                        { color: selectedTagFilter === tag.id ? '#FFF' : tag.color },
+                      ]}>
+                        {tag.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Selection Mode Header */}
+          {isSelectionMode && (
+            <>
+              <View style={styles.selectionHeader}>
+                <View style={styles.selectionHeaderLeft}>
+                  <Text style={styles.selectionCount}>
+                    {selectedNoteIds.length} not seçildi
+                  </Text>
+                  {selectedNoteIds.length < filteredNotes.length && (
+                    <TouchableOpacity
+                      onPress={selectAllNotes}
+                      style={styles.selectAllButton}
+                    >
+                      <Text style={styles.selectAllText}>Tümünü Seç</Text>
+                    </TouchableOpacity>
+                  )}
+                  {selectedNoteIds.length > 0 && (
+                    <TouchableOpacity
+                      onPress={deselectAllNotes}
+                      style={styles.selectAllButton}
+                    >
+                      <Text style={styles.selectAllText}>Temizle</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {selectedNoteIds.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowBulkActionsMenu(true);
+                    }}
+                    style={styles.selectAllButton}
+                  >
+                    <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.accent} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Top Merge Button */}
+              {selectedNoteIds.length >= 2 && (
+                <View style={styles.mergeButtonContainer}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleMergeNotes}
+                    disabled={isMergingNotes}
+                    style={styles.mergeButton}
+                  >
+                    <LinearGradient
+                      colors={['#10B981', '#059669']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.mergeButtonGradient}
+                    >
+                      {isMergingNotes ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <>
+                          <Ionicons name="git-merge" size={20} color="#FFFFFF" />
+                          <Text style={styles.mergeButtonText}>
+                            {selectedNoteIds.length} Notu Birleştir
+                          </Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
+          )}
+
+          {/* Notes List */}
           {filteredNotes.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="pricetag-outline" size={64} color={Colors.text.tertiary} />
@@ -1752,6 +2821,36 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
                   ))}
                 </View>
               )}
+            </View>
+          )}
+
+          {/* Bottom Merge Button */}
+          {isSelectionMode && selectedNoteIds.length >= 2 && (
+            <View style={styles.mergeButtonContainer}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleMergeNotes}
+                disabled={isMergingNotes}
+                style={styles.mergeButton}
+              >
+                <LinearGradient
+                  colors={['#10B981', '#059669']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.mergeButtonGradient}
+                >
+                  {isMergingNotes ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="git-merge" size={20} color="#FFFFFF" />
+                      <Text style={styles.mergeButtonText}>
+                        {selectedNoteIds.length} Notu Birleştir
+                      </Text>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -1803,6 +2902,9 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
         {/* Tag Modal */}
         <TagModal />
 
+        {/* Bulk Actions Modal */}
+        <BulkActionsModal />
+
         {/* Rename Modal */}
         <RenameNoteModal
           visible={showRenameModal}
@@ -1810,6 +2912,52 @@ export const CourseDetailScreen = ({ navigation, route }: any) => {
           onSave={handleRenameNote}
           onCancel={() => setShowRenameModal(false)}
         />
+
+        {/* Color Change Modal */}
+        <Modal
+          visible={showColorModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowColorModal(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setShowColorModal(false)}
+            style={styles.modalOverlay}
+          >
+            <TouchableWithoutFeedback>
+              <View style={styles.colorModalContent}>
+                <Text style={styles.colorModalTitle}>Renk Seç</Text>
+                
+                <View style={styles.colorGrid}>
+                  {CourseColors.map((color) => (
+                    <TouchableOpacity
+                      key={color.id}
+                      onPress={() => handleChangeColor(color)}
+                      activeOpacity={0.7}
+                      style={styles.colorItem}
+                    >
+                      <LinearGradient
+                        colors={color.gradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[
+                          styles.colorCircle,
+                          course.color === color.gradient[0] && styles.colorCircleSelected,
+                        ]}
+                      >
+                        {course.color === color.gradient[0] && (
+                          <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                        )}
+                      </LinearGradient>
+                      <Text style={styles.colorName}>{color.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </TouchableOpacity>
+        </Modal>
 
         {/* Action Sheet */}
         <ActionSheet />
