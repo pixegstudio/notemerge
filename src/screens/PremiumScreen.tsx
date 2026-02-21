@@ -17,8 +17,9 @@ import { IconButton, GradientButton } from '../components';
 import { useTheme } from '../context/ThemeContext';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { Typography } from '../constants/typography';
-import { IAPService, SubscriptionProduct } from '../services/IAPService';
+import { IAPService, SubscriptionProduct, PRODUCT_IDS } from '../services/IAPService';
 import { StorageService } from '../services/StorageService';
+import { Platform } from 'react-native';
 
 type PlanType = 'monthly' | 'yearly';
 
@@ -301,7 +302,10 @@ export const PremiumScreen = ({ navigation }: any) => {
       Alert.alert(
         'Bağlantı Hatası',
         'Ürünler yüklenirken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.',
-        [{ text: 'Tamam' }]
+        [
+          { text: 'İptal', style: 'cancel' },
+          { text: 'Tekrar Dene', onPress: () => initializeIAP() }
+        ]
       );
     } finally {
       setIsLoading(false);
@@ -318,7 +322,11 @@ export const PremiumScreen = ({ navigation }: any) => {
       setIsPurchasing(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      const productId = selectedPlan === 'yearly' ? 'notemerge_yearly' : 'notemerge_monthly';
+      const productId = Platform.select({
+        ios: selectedPlan === 'yearly' ? PRODUCT_IDS.ios.yearly : PRODUCT_IDS.ios.monthly,
+        android: selectedPlan === 'yearly' ? PRODUCT_IDS.android.yearly : PRODUCT_IDS.android.monthly,
+      }) || (selectedPlan === 'yearly' ? PRODUCT_IDS.ios.yearly : PRODUCT_IDS.ios.monthly);
+      
       const success = await IAPService.purchaseSubscription(productId);
 
       if (success) {
