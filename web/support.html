@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destek - NoteMerge</title>
+    <link rel="icon" type="image/png" href="./assets/images/logo.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: #0F0F1E;
+            color: #FFFFFF;
+            line-height: 1.8;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .logo img {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+        }
+        
+        .logo span {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #10B981;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            color: #9CA3AF;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section {
+            margin-bottom: 2rem;
+        }
+        
+        .section:last-child {
+            margin-bottom: 0;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #10B981;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            color: #D1D5DB;
+        }
+        
+        .contact-info {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10B981;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        .contact-info strong {
+            color: #10B981;
+        }
+        
+        .email-link {
+            color: #10B981;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .email-link:hover {
+            text-decoration: underline;
+        }
+        
+        .faq-section {
+            margin-top: 3rem;
+        }
+        
+        .faq-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        
+        .faq-question:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .faq-question h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .faq-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+            color: #10B981;
+            font-weight: bold;
+        }
+        
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+        }
+        
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .faq-answer-content {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+            color: #D1D5DB;
+        }
+        
+        .faq-item.active .faq-answer {
+            max-height: 500px;
+        }
+        
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: #D1D5DB;
+        }
+        
+        .features-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10B981;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Ana Sayfaya Dön</a>
+        
+        <div class="header">
+            <div class="logo">
+                <img src="./assets/images/logo.png" alt="NoteMerge Logo">
+                <span>NoteMerge</span>
+            </div>
+            <h1>Destek</h1>
+            <p class="subtitle">Size nasıl yardımcı olabiliriz?</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>NoteMerge Hakkında</h2>
+                <p>
+                    NoteMerge, öğrenciler için özel olarak tasarlanmış bir ders notu organizasyon ve PDF birleştirme uygulamasıdır. 
+                    Ders notlarınızı düzenleyin, PDF'leri birleştirin ve iCloud ile tüm cihazlarınızda senkronize edin.
+                </p>
+                
+                <ul class="features-list">
+                    <li>Ders bazlı organizasyon sistemi</li>
+                    <li>PDF birleştirme ve görüntüleme</li>
+                    <li>Vize, final, ödev gibi etiket sistemi</li>
+                    <li>iCloud otomatik yedekleme</li>
+                    <li>Koyu/Açık tema desteği</li>
+                    <li>İstatistik ve ilerleme takibi</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2>İletişim</h2>
+                <p>
+                    Herhangi bir sorunuz, öneriniz veya destek talebiniz için bizimle iletişime geçebilirsiniz.
+                </p>
+                
+                <div class="contact-info">
+                    <p><strong>E-posta:</strong> <a href="mailto:support@notemerge.app" class="email-link">support@notemerge.app</a></p>
+                    <p><strong>Web:</strong> <a href="https://notemerge.app" class="email-link">notemerge.app</a></p>
+                    <p><strong>Yanıt Süresi:</strong> 24-48 saat içinde</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-section">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Sık Sorulan Sorular</h2>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>NoteMerge ücretsiz mi?</h3>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>
+                            Evet! NoteMerge ücretsiz olarak indirilebilir ve temel özellikler ücretsizdir. 
+                            Premium özellikler (sınırsız not oluşturma, gelişmiş PDF birleştirme, reklamsız deneyim) 
+                            aylık abonelik ile kullanılabilir.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>Verilerim güvende mi?</h3>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>
+                            Evet! Tüm verileriniz cihazınızda yerel olarak saklanır ve iCloud senkronizasyonu 
+                            kullanıyorsanız Apple'ın güvenlik standartlarına uygun olarak şifrelenir. 
+                            Verilerinize sadece siz erişebilirsiniz.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>PDF birleştirme nasıl çalışır?</h3>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>
+                            Bir ders içindeki notları seçin ve "Birleştir" butonuna tıklayın. 
+                            NoteMerge, seçtiğiniz tüm PDF notlarınızı otomatik olarak tek bir PDF dosyasında birleştirir. 
+                            Birleştirilen PDF'i görüntüleyebilir veya paylaşabilirsiniz.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>Notlarım tüm cihazlarımda senkronize olur mu?</h3>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>
+                            Evet! iCloud yedekleme özelliğini aktif ettiğinizde, notlarınız tüm iOS cihazlarınızda 
+                            otomatik olarak senkronize edilir. iPhone'da eklediğiniz notlar anında iPad'inizde de görünür.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <h3>Aboneliğimi nasıl iptal edebilirim?</h3>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>
+                            Aboneliğinizi iOS Ayarlar → [Adınız] → Abonelikler menüsünden yönetebilir ve 
+                            istediğiniz zaman iptal edebilirsiniz. İptal sonrası mevcut dönem sonuna kadar 
+                            premium özelliklerden yararlanmaya devam edersiniz.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleFAQ(element) {
+            const faqItem = element.parentElement;
+            const isActive = faqItem.classList.contains('active');
+            
+            // Close all FAQ items
+            document.querySelectorAll('.faq-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Toggle current item
+            if (!isActive) {
+                faqItem.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

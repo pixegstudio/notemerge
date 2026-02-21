@@ -32,10 +32,18 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
 
+# Firebase config files (SECURITY)
+# Note: firebase.config.ts is committed for now (web config is public)
+# But if you add sensitive keys, move them to .env
+GoogleService-Info.plist
+google-services.json
+
 # generated native folders
 /ios
+!/ios/Podfile.lock
 /android
