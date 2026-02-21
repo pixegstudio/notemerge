@@ -17,6 +17,7 @@
   "ios": {
     "supportsTablet": false,
     "bundleIdentifier": "com.notemerge.app",
+    "buildNumber": "9",
       "infoPlist": {
         "NSCameraUsageDescription": "NoteMerge needs camera access to scan your notes and documents.",
         "NSPhotoLibraryUsageDescription": "NoteMerge needs photo library access to import images.",
