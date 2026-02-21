@@ -1,11 +1,10 @@
-// import * as RNIap from 'react-native-iap';
+import * as RNIap from 'react-native-iap';
 import { Platform } from 'react-native';
 import { StorageService } from './StorageService';
 import PremiumService from './PremiumService';
 
-// Mock types for development (Expo Go doesn't support react-native-iap)
-type Purchase = any;
-type Subscription = any;
+type Purchase = RNIap.Purchase;
+type Subscription = RNIap.Subscription;
 
 // Product IDs
 const PRODUCT_IDS = Platform.select({
@@ -47,14 +46,14 @@ class IAPServiceClass {
         return;
       }
 
-      // const result = await RNIap.initConnection();
-      // console.log('IAP Connection initialized:', result);
+      const result = await RNIap.initConnection();
+      console.log('IAP Connection initialized:', result);
       
       // Get available products
       await this.loadProducts();
       
       // Check for pending purchases
-      // await this.checkPendingPurchases();
+      await this.checkPendingPurchases();
       
       this.isInitialized = true;
     } catch (error) {
@@ -92,20 +91,18 @@ class IAPServiceClass {
         ];
       }
 
-      // const subscriptions = await RNIap.getSubscriptions({ skus: PRODUCT_IDS });
-      // this.products = subscriptions;
+      const subscriptions = await RNIap.getSubscriptions({ skus: PRODUCT_IDS });
+      this.products = subscriptions;
       
-      // return subscriptions.map(product => ({
-      //   productId: product.productId,
-      //   title: product.title,
-      //   description: product.description,
-      //   price: product.price,
-      //   localizedPrice: product.localizedPrice,
-      //   currency: product.currency,
-      //   type: product.productId.includes('yearly') ? 'yearly' : 'monthly',
-      // }));
-      
-      return [];
+      return subscriptions.map(product => ({
+        productId: product.productId,
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        localizedPrice: product.localizedPrice,
+        currency: product.currency,
+        type: product.productId.includes('yearly') ? 'yearly' : 'monthly',
+      }));
     } catch (error) {
       console.error('Error loading products:', error);
       return [];
@@ -137,22 +134,22 @@ class IAPServiceClass {
         return true;
       }
 
-      // const purchase = await RNIap.requestSubscription({ sku: productId });
+      const purchase = await RNIap.requestSubscription({ sku: productId });
       
-      // if (purchase) {
-      //   // Verify purchase (in production, verify with your backend)
-      //   const isValid = await this.verifyPurchase(purchase);
+      if (purchase) {
+        // Update Firebase premium status
+        await PremiumService.updatePremiumStatus({
+          isPremium: true,
+          productId,
+          purchaseDate: Date.now(),
+          platform: Platform.OS as 'ios' | 'android',
+        });
         
-      //   if (isValid) {
-      //     // Grant premium access
-      //     await StorageService.setPremiumStatus(true);
-          
-      //     // Finish transaction
-      //     await RNIap.finishTransaction({ purchase, isConsumable: false });
-          
-      //     return true;
-      //   }
-      // }
+        // Finish transaction
+        await RNIap.finishTransaction({ purchase, isConsumable: false });
+        
+        return true;
+      }
       
       return false;
     } catch (error: any) {
@@ -186,19 +183,22 @@ class IAPServiceClass {
         return currentStatus;
       }
 
-      // const purchases = await RNIap.getAvailablePurchases();
+      const purchases = await RNIap.getAvailablePurchases();
       
-      // if (purchases && purchases.length > 0) {
-      //   // User has active subscription
-      //   await StorageService.setPremiumStatus(true);
-      //   return true;
-      // } else {
-      //   // No active subscription
-      //   await StorageService.setPremiumStatus(false);
-      //   return false;
-      // }
-      
-      return false;
+      if (purchases && purchases.length > 0) {
+        // User has active subscription
+        const latestPurchase = purchases[0];
+        await PremiumService.updatePremiumStatus({
+          isPremium: true,
+          productId: latestPurchase.productId,
+          purchaseDate: Date.now(),
+          platform: Platform.OS as 'ios' | 'android',
+        });
+        return true;
+      } else {
+        // No active subscription
+        return false;
+      }
     } catch (error) {
       console.error('Error restoring purchases:', error);
       throw error;
@@ -212,16 +212,17 @@ class IAPServiceClass {
     try {
       if (this.isMockMode) return;
 
-      // const purchases = await RNIap.getAvailablePurchases();
+      const purchases = await RNIap.getAvailablePurchases();
       
-      // for (const purchase of purchases) {
-      //   const isValid = await this.verifyPurchase(purchase);
-        
-      //   if (isValid) {
-      //     await StorageService.setPremiumStatus(true);
-      //     await RNIap.finishTransaction({ purchase, isConsumable: false });
-      //   }
-      // }
+      for (const purchase of purchases) {
+        await PremiumService.updatePremiumStatus({
+          isPremium: true,
+          productId: purchase.productId,
+          purchaseDate: Date.now(),
+          platform: Platform.OS as 'ios' | 'android',
+        });
+        await RNIap.finishTransaction({ purchase, isConsumable: false });
+      }
     } catch (error) {
       console.error('Error checking pending purchases:', error);
     }
@@ -265,7 +266,7 @@ class IAPServiceClass {
         return;
       }
 
-      // await RNIap.endConnection();
+      await RNIap.endConnection();
       this.isInitialized = false;
     } catch (error) {
       console.error('Error disconnecting IAP:', error);
@@ -285,12 +286,11 @@ class IAPServiceClass {
   async hasActiveSubscription(): Promise<boolean> {
     try {
       if (this.isMockMode) {
-        return await StorageService.getPremiumStatus();
+        return await PremiumService.isPremium();
       }
 
-      // const purchases = await RNIap.getAvailablePurchases();
-      // return purchases && purchases.length > 0;
-      return false;
+      const purchases = await RNIap.getAvailablePurchases();
+      return purchases && purchases.length > 0;
     } catch (error) {
       console.error('Error checking subscription:', error);
       return false;
